@@ -1,16 +1,18 @@
 import { motion } from "framer-motion";
-import { Flame, Star } from "lucide-react";
-import { getStreakDays, getDailyLog } from "@/lib/store";
-import { getTotalMaxPoints } from "@/lib/modules";
+import { Flame, Star, TrendingUp } from "lucide-react";
+import { getStreakDays } from "@/lib/store";
+import { getCoreMaxPoints } from "@/lib/modules";
 
 interface HeroCardProps {
-  totalPoints: number;
+  corePoints: number;
+  bonusPoints: number;
 }
 
-export default function HeroCard({ totalPoints }: HeroCardProps) {
+export default function HeroCard({ corePoints, bonusPoints }: HeroCardProps) {
   const streak = getStreakDays();
-  const maxPoints = getTotalMaxPoints();
-  const percentage = Math.min(Math.round((totalPoints / maxPoints) * 100), 100);
+  const coreMax = getCoreMaxPoints();
+  const percentage = Math.min(Math.round((corePoints / coreMax) * 100), 100);
+  const totalPoints = corePoints + bonusPoints;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground shadow-elevated">
@@ -19,19 +21,44 @@ export default function HeroCard({ totalPoints }: HeroCardProps) {
       <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-primary-foreground/5" />
 
       <div className="relative z-10">
-        <p className="text-sm font-medium opacity-80">今日成长积分</p>
-        <motion.div
-          key={totalPoints}
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="flex items-baseline gap-2 mt-1"
-        >
-          <span className="text-5xl font-display font-bold tracking-tight">
+        <p className="text-sm font-medium opacity-80">今日得分</p>
+
+        {/* Core score */}
+        <div className="flex items-baseline gap-2 mt-1">
+          <span className="text-sm opacity-70">核心分：</span>
+          <motion.span
+            key={corePoints}
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="text-3xl font-display font-bold tracking-tight"
+          >
+            {corePoints}
+          </motion.span>
+          <span className="text-base opacity-60">/ {coreMax}</span>
+        </div>
+
+        {/* Bonus + Total */}
+        <div className="flex items-baseline gap-4 mt-1">
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm opacity-70">成长加分：</span>
+            <span className="text-lg font-display font-semibold text-amber-200">+{bonusPoints}</span>
+          </div>
+        </div>
+
+        <div className="mt-2 h-px bg-primary-foreground/20" />
+
+        <div className="flex items-baseline gap-2 mt-2">
+          <span className="text-sm opacity-70">今日总分：</span>
+          <motion.span
+            key={totalPoints}
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            className="text-4xl font-display font-bold tracking-tight"
+          >
             {totalPoints}
-          </span>
-          <span className="text-lg opacity-60">/ {maxPoints}</span>
-        </motion.div>
+          </motion.span>
+        </div>
 
         <div className="mt-4 flex items-center gap-4">
           <div className="flex items-center gap-1.5 bg-primary-foreground/15 rounded-full px-3 py-1">
@@ -40,11 +67,11 @@ export default function HeroCard({ totalPoints }: HeroCardProps) {
           </div>
           <div className="flex items-center gap-1.5 bg-primary-foreground/15 rounded-full px-3 py-1">
             <Star className="w-4 h-4" />
-            <span className="text-sm font-medium">{percentage}% 完成</span>
+            <span className="text-sm font-medium">{percentage}% 核心完成</span>
           </div>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress bar for core */}
         <div className="mt-4 h-2 rounded-full bg-primary-foreground/20 overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-primary-foreground/80"

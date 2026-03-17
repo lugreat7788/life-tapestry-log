@@ -10,9 +10,10 @@ interface ModuleCardProps {
   module: Module;
   log: DailyLog;
   index: number;
+  showBonus?: boolean;
 }
 
-export default function ModuleCard({ module, log, index }: ModuleCardProps) {
+export default function ModuleCard({ module, log, index, showBonus }: ModuleCardProps) {
   const navigate = useNavigate();
 
   const completedCount = module.items.filter(
@@ -35,7 +36,8 @@ export default function ModuleCard({ module, log, index }: ModuleCardProps) {
       className={cn(
         "w-full text-left rounded-xl p-4 shadow-card transition-all duration-200 hover:shadow-elevated",
         module.bgClass,
-        allDone && "ring-2 ring-primary/30"
+        allDone && "ring-2 ring-primary/30",
+        showBonus && "ring-1 ring-amber-300/30"
       )}
     >
       <div className="flex items-center justify-between">
@@ -46,7 +48,7 @@ export default function ModuleCard({ module, log, index }: ModuleCardProps) {
               {module.name}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {earnedPoints} / {maxPoints} 分
+              {showBonus ? `+${earnedPoints}` : `${earnedPoints} / ${maxPoints}`} 分
             </p>
           </div>
         </div>
@@ -67,7 +69,6 @@ export default function ModuleCard({ module, log, index }: ModuleCardProps) {
         </div>
       </div>
 
-      {/* Mini progress bar */}
       <div className="mt-3 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
         <motion.div
           className="h-full rounded-full bg-foreground/30"
