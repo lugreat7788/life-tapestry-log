@@ -7,12 +7,16 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1rem",
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
+      fontFamily: {
+        display: ["Inter", "sans-serif"],
+        body: ["'Noto Sans SC'", "Inter", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -47,6 +51,26 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        module: {
+          health: "hsl(var(--module-health))",
+          "health-fg": "hsl(var(--module-health-fg))",
+          learning: "hsl(var(--module-learning))",
+          "learning-fg": "hsl(var(--module-learning-fg))",
+          goals: "hsl(var(--module-goals))",
+          "goals-fg": "hsl(var(--module-goals-fg))",
+          relationships: "hsl(var(--module-relationships))",
+          "relationships-fg": "hsl(var(--module-relationships-fg))",
+          "daily-record": "hsl(var(--module-daily-record))",
+          "daily-record-fg": "hsl(var(--module-daily-record-fg))",
+          output: "hsl(var(--module-output))",
+          "output-fg": "hsl(var(--module-output-fg))",
+          challenge: "hsl(var(--module-challenge))",
+          "challenge-fg": "hsl(var(--module-challenge-fg))",
+          "new-things": "hsl(var(--module-new-things))",
+          "new-things-fg": "hsl(var(--module-new-things-fg))",
+          "entropy-reduction": "hsl(var(--module-entropy-reduction))",
+          "entropy-reduction-fg": "hsl(var(--module-entropy-reduction-fg))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -63,27 +87,35 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        elevated: "var(--shadow-elevated)",
+      },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "score-pop": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "check-pulse": {
+          "0%": { transform: "scale(0.8)", opacity: "0" },
+          "50%": { transform: "scale(1.1)", opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "score-pop": "score-pop 0.3s ease-out",
+        "check-pulse": "check-pulse 0.3s ease-out",
       },
     },
   },
