@@ -1,11 +1,11 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, LayoutGrid, CheckSquare, BarChart3, Settings } from "lucide-react";
+import { Home, LayoutGrid, Target, BarChart3, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, label: "首页" },
   { path: "/modules", icon: LayoutGrid, label: "模块" },
-  { path: "/todo", icon: CheckSquare, label: "待办" },
+  { path: "/goals", icon: Target, label: "目标" },
   { path: "/stats", icon: BarChart3, label: "统计" },
   { path: "/settings", icon: Settings, label: "设置" },
 ];

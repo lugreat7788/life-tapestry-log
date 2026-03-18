@@ -1,10 +1,198 @@
-import { useState } from "react";
-import { MODULES } from "@/lib/modules";
+import { useState, useMemo } from "react";
+import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints } from "@/lib/modules";
+import type { Module, ModuleItem } from "@/lib/modules";
+import { getModuleConfig, saveModuleConfig, clearModuleConfig, type ModuleConfig } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { User, Download, ChevronRight } from "lucide-react";
+import { User, Download, ChevronRight, Plus, Trash2, RotateCcw, AlertTriangle, Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+function applyConfig(modules: Module[], config: ModuleConfig | null): Module[] {
+  if (!config) return modules;
+  return modules.map((mod) => {
+    const cfg = config.modules[mod.key];
+    if (!cfg) return mod;
+    return {
+      ...mod,
+      name: cfg.name || mod.name,
+      items: cfg.items.map((item) => ({ ...item })),
+    };
+  });
+}
+
+function applySingleConfig(mod: Module, config: ModuleConfig | null): Module {
+  if (!config) return mod;
+  const cfg = config.modules[mod.key];
+  if (!cfg) return mod;
+  return {
+    ...mod,
+    name: cfg.name || mod.name,
+    items: cfg.items.map((item) => ({ ...item })),
+  };
+}
 
 export default function SettingsPage() {
+  const [config, setConfig] = useState<ModuleConfig | null>(() => getModuleConfig());
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const [editingModuleName, setEditingModuleName] = useState<string | null>(null);
+
+  const allModules = useMemo(() => {
+    const core = applyConfig(CORE_MODULES, config);
+    const bonus = applyConfig(BONUS_MODULES, config);
+    const goals = applySingleConfig(GOALS_MODULE, config);
+    return { core, bonus, goals };
+  }, [config]);
+
+  const coreTotal = allModules.core.reduce(
+    (sum, mod) => sum + mod.items.reduce((s, item) => s + item.points, 0),
+    0
+  );
+
+  const ensureConfig = (): ModuleConfig => {
+    if (config) return JSON.parse(JSON.stringify(config));
+    const newConfig: ModuleConfig = { modules: {} };
+    [...CORE_MODULES, ...BONUS_MODULES, GOALS_MODULE].forEach((mod) => {
+      newConfig.modules[mod.key] = {
+        name: mod.name,
+        items: mod.items.map((item) => ({ ...item })),
+      };
+    });
+    return newConfig;
+  };
+
+  const updateConfig = (newConfig: ModuleConfig) => {
+    setConfig(newConfig);
+    saveModuleConfig(newConfig);
+  };
+
+  const handleRenameModule = (moduleKey: string, newName: string) => {
+    const cfg = ensureConfig();
+    if (!cfg.modules[moduleKey]) {
+      const mod = [...CORE_MODULES, ...BONUS_MODULES, GOALS_MODULE].find(m => m.key === moduleKey)!;
+      cfg.modules[moduleKey] = { name: mod.name, items: mod.items.map(i => ({ ...i })) };
+    }
+    cfg.modules[moduleKey].name = newName;
+    updateConfig(cfg);
+    setEditingModuleName(null);
+  };
+
+  const handleRenameItem = (moduleKey: string, itemIndex: number, newName: string) => {
+    const cfg = ensureConfig();
+    cfg.modules[moduleKey].items[itemIndex].name = newName;
+    updateConfig(cfg);
+  };
+
+  const handleChangePoints = (moduleKey: string, itemIndex: number, points: number) => {
+    const cfg = ensureConfig();
+    cfg.modules[moduleKey].items[itemIndex].points = Math.max(0, points);
+    updateConfig(cfg);
+  };
+
+  const handleAddItem = (moduleKey: string) => {
+    const cfg = ensureConfig();
+    const newId = `custom_${Date.now()}`;
+    cfg.modules[moduleKey].items.push({ id: newId, name: "新项目", points: 5 });
+    updateConfig(cfg);
+  };
+
+  const handleDeleteItem = (moduleKey: string, itemIndex: number) => {
+    const cfg = ensureConfig();
+    if (cfg.modules[moduleKey].items.length <= 1) {
+      toast.error("至少保留一个项目");
+      return;
+    }
+    cfg.modules[moduleKey].items.splice(itemIndex, 1);
+    updateConfig(cfg);
+  };
+
+  const handleReset = () => {
+    clearModuleConfig();
+    setConfig(null);
+    toast.success("已恢复默认设置");
+  };
+
+  const renderModuleEditor = (mod: Module, isCore: boolean) => (
+    <div key={mod.key} className="bg-card rounded-xl shadow-card overflow-hidden">
+      <button
+        onClick={() => setExpandedModule(expandedModule === mod.key ? null : mod.key)}
+        className="w-full flex items-center justify-between p-4"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xl">{mod.icon}</span>
+          {editingModuleName === mod.key ? (
+            <Input
+              className="h-7 w-32 text-sm"
+              defaultValue={mod.name}
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+              onBlur={(e) => handleRenameModule(mod.key, e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleRenameModule(mod.key, (e.target as HTMLInputElement).value);
+                }
+              }}
+            />
+          ) : (
+            <span className="font-medium text-sm">{mod.name}</span>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingModuleName(editingModuleName === mod.key ? null : mod.key);
+            }}
+            className="text-muted-foreground hover:text-foreground p-0.5"
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
+        </div>
+        <ChevronRight
+          className={cn(
+            "w-4 h-4 text-muted-foreground transition-transform",
+            expandedModule === mod.key && "rotate-90"
+          )}
+        />
+      </button>
+      {expandedModule === mod.key && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {mod.items.map((item, idx) => (
+            <div key={item.id} className="flex items-center gap-2">
+              <Input
+                className="h-8 text-sm flex-1"
+                defaultValue={item.name}
+                onBlur={(e) => handleRenameItem(mod.key, idx, e.target.value)}
+              />
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  className="h-8 w-16 text-sm text-center"
+                  defaultValue={item.points}
+                  min={0}
+                  onBlur={(e) => handleChangePoints(mod.key, idx, parseInt(e.target.value) || 0)}
+                />
+                <span className="text-xs text-muted-foreground">分</span>
+              </div>
+              <button
+                onClick={() => handleDeleteItem(mod.key, idx)}
+                className="text-muted-foreground hover:text-destructive p-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleAddItem(mod.key)}
+            className="w-full"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            添加项目
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
@@ -25,64 +213,63 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Module point settings */}
+      {/* Core modules config */}
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
-          积分设置
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            📋 每日必修 · 积分设置
+          </h2>
+        </div>
+        {coreTotal !== 100 && (
+          <div className="flex items-center gap-2 bg-destructive/10 text-destructive rounded-lg px-3 py-2 mb-3 text-xs">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>核心模块总分当前为 {coreTotal} 分，建议保持等于 100 分</span>
+          </div>
+        )}
         <div className="space-y-2">
-          {MODULES.map((mod) => (
-            <div key={mod.key} className="bg-card rounded-xl shadow-card overflow-hidden">
-              <button
-                onClick={() =>
-                  setExpandedModule(expandedModule === mod.key ? null : mod.key)
-                }
-                className="w-full flex items-center justify-between p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{mod.icon}</span>
-                  <span className="font-medium text-sm">{mod.name}</span>
-                </div>
-                <ChevronRight
-                  className={cn(
-                    "w-4 h-4 text-muted-foreground transition-transform",
-                    expandedModule === mod.key && "rotate-90"
-                  )}
-                />
-              </button>
-              {expandedModule === mod.key && (
-                <div className="px-4 pb-4 space-y-2 border-t border-border pt-3">
-                  {mod.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <span className="text-muted-foreground">{item.name}</span>
-                      <span
-                        className={cn(
-                          "px-2 py-0.5 rounded-full text-xs font-medium",
-                          mod.bgClass,
-                          mod.fgClass
-                        )}
-                      >
-                        {item.points} 分
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+          {allModules.core.map((mod) => renderModuleEditor(mod, true))}
         </div>
       </div>
 
-      {/* Data export */}
-      <div className="bg-card rounded-xl shadow-card p-4">
-        <button className="flex items-center gap-3 w-full text-sm">
-          <Download className="w-5 h-5 text-muted-foreground" />
-          <span>导出数据</span>
-          <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
-        </button>
+      {/* Bonus modules config */}
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-amber-600 mb-3 uppercase tracking-wider">
+          ⭐ 成长加分 · 积分设置
+        </h2>
+        <div className="space-y-2">
+          {allModules.bonus.map((mod) => renderModuleEditor(mod, false))}
+        </div>
+      </div>
+
+      {/* Goals module config */}
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+          🏆 目标追踪 · 积分设置
+        </h2>
+        <div className="space-y-2">
+          {renderModuleEditor(allModules.goals, false)}
+        </div>
+      </div>
+
+      {/* Reset + Export */}
+      <div className="space-y-2">
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-3 w-full text-sm text-destructive"
+          >
+            <RotateCcw className="w-5 h-5" />
+            <span>恢复默认设置</span>
+            <ChevronRight className="w-4 h-4 ml-auto" />
+          </button>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <button className="flex items-center gap-3 w-full text-sm">
+            <Download className="w-5 h-5 text-muted-foreground" />
+            <span>导出数据</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+          </button>
+        </div>
       </div>
 
       <p className="text-center text-xs text-muted-foreground mt-8">
