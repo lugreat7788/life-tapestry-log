@@ -54,7 +54,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Bonus modules */}
+      {/* Bonus modules - without goals */}
       <div className="mt-6">
         <h2 className="text-sm font-semibold text-amber-600 mb-3 uppercase tracking-wider">
           ⭐ 成长加分

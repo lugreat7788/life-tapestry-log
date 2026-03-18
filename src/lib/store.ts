@@ -25,8 +25,21 @@ export interface TodoItem {
   createdAt: string;
 }
 
+export interface GoalItem {
+  id: string;
+  title: string;
+  description: string;
+  targetDate?: string;
+  type: "short_term" | "long_term";
+  status: "not_started" | "in_progress" | "completed";
+  points: number;
+  createdAt: string;
+}
+
 const STORAGE_KEY = "lifelog_data";
 const TODO_KEY = "lifelog_todos";
+const GOALS_KEY = "lifelog_goals";
+const MODULE_CONFIG_KEY = "lifelog_module_config";
 
 function getDateKey(date?: Date): string {
   return format(date || new Date(), "yyyy-MM-dd");
@@ -100,6 +113,7 @@ export function updateEntryNotes(
   return log;
 }
 
+// Todos
 export function getTodos(): TodoItem[] {
   const data = localStorage.getItem(TODO_KEY);
   return data ? JSON.parse(data) : [];
@@ -107,6 +121,37 @@ export function getTodos(): TodoItem[] {
 
 export function saveTodos(todos: TodoItem[]): void {
   localStorage.setItem(TODO_KEY, JSON.stringify(todos));
+}
+
+// Goals
+export function getGoals(): GoalItem[] {
+  const data = localStorage.getItem(GOALS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function saveGoals(goals: GoalItem[]): void {
+  localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
+}
+
+// Module config (custom names, points, items)
+export interface ModuleConfig {
+  modules: Record<string, {
+    name?: string;
+    items: Array<{ id: string; name: string; points: number }>;
+  }>;
+}
+
+export function getModuleConfig(): ModuleConfig | null {
+  const data = localStorage.getItem(MODULE_CONFIG_KEY);
+  return data ? JSON.parse(data) : null;
+}
+
+export function saveModuleConfig(config: ModuleConfig): void {
+  localStorage.setItem(MODULE_CONFIG_KEY, JSON.stringify(config));
+}
+
+export function clearModuleConfig(): void {
+  localStorage.removeItem(MODULE_CONFIG_KEY);
 }
 
 export function getStreakDays(): number {

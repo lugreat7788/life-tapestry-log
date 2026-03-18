@@ -67,9 +67,8 @@ export const CORE_MODULES: Module[] = [
     bgClass: "bg-module-learning",
     fgClass: "text-module-learning-fg",
     items: [
-      { id: "reading", name: "阅读", points: 7 },
-      { id: "english", name: "英语", points: 7 },
-      { id: "tcm", name: "中医", points: 6 },
+      { id: "reading", name: "阅读", points: 10 },
+      { id: "english", name: "英语", points: 10 },
     ],
   },
   {
@@ -144,22 +143,24 @@ export const BONUS_MODULES: Module[] = [
       { id: "declutter", name: "物品整理", points: 5 },
     ],
   },
-  {
-    key: "goals",
-    name: "目标追踪",
-    icon: "🏆",
-    tier: "bonus",
-    colorClass: "module-goals",
-    bgClass: "bg-module-goals",
-    fgClass: "text-module-goals-fg",
-    items: [
-      { id: "short_term", name: "近期目标", points: 10 },
-      { id: "long_term", name: "远期目标", points: 20 },
-    ],
-  },
 ];
 
-export const MODULES: Module[] = [...CORE_MODULES, ...BONUS_MODULES];
+// Goals module — standalone, not in core or bonus
+export const GOALS_MODULE: Module = {
+  key: "goals",
+  name: "目标追踪",
+  icon: "🏆",
+  tier: "bonus",
+  colorClass: "module-goals",
+  bgClass: "bg-module-goals",
+  fgClass: "text-module-goals-fg",
+  items: [
+    { id: "short_term", name: "近期目标", points: 10 },
+    { id: "long_term", name: "远期目标", points: 20 },
+  ],
+};
+
+export const MODULES: Module[] = [...CORE_MODULES, ...BONUS_MODULES, GOALS_MODULE];
 
 export function getModule(key: ModuleKey): Module {
   return MODULES.find((m) => m.key === key)!;
@@ -176,3 +177,8 @@ export function getCoreMaxPoints(): number {
 export function getTotalMaxPoints(): number {
   return MODULES.reduce((sum, mod) => sum + getModuleMaxPoints(mod), 0);
 }
+
+// Default module data for reset
+export const DEFAULT_CORE_MODULES = JSON.parse(JSON.stringify(CORE_MODULES));
+export const DEFAULT_BONUS_MODULES = JSON.parse(JSON.stringify(BONUS_MODULES));
+export const DEFAULT_GOALS_MODULE = JSON.parse(JSON.stringify(GOALS_MODULE));
