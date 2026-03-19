@@ -313,7 +313,7 @@ export async function getModuleConfig(userId: string): Promise<ModuleConfig | nu
     .eq("user_id", userId)
     .maybeSingle();
 
-  return data?.config as ModuleConfig | null;
+  return data?.config as unknown as ModuleConfig | null;
 }
 
 export async function saveModuleConfig(userId: string, config: ModuleConfig) {
