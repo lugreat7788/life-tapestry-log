@@ -324,9 +324,9 @@ export async function saveModuleConfig(userId: string, config: ModuleConfig) {
     .maybeSingle();
 
   if (existing) {
-    await supabase.from("module_configs").update({ config }).eq("id", existing.id);
+    await supabase.from("module_configs").update({ config: config as unknown as Record<string, any> }).eq("id", existing.id);
   } else {
-    await supabase.from("module_configs").insert({ user_id: userId, config });
+    await supabase.from("module_configs").insert({ user_id: userId, config: config as unknown as Record<string, any> });
   }
 }
 
