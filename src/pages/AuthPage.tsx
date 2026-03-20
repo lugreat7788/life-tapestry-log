@@ -10,9 +10,12 @@ import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
 
 export default function AuthPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">加载中...</div>
@@ -23,9 +26,6 @@ export default function AuthPage() {
   if (user) {
     return <Navigate to="/" replace />;
   }
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
     if (!email || !password) {
