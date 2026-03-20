@@ -106,6 +106,59 @@ export default function SettingsPage() {
     toast.success("已恢复默认设置");
   };
 
+  const handleExportData = async () => {
+    if (!user) return;
+    try {
+      toast.info("正在导出数据...");
+      const [logs, todos, goals] = await Promise.all([
+        getAllLogs(user.id),
+        getTodos(user.id),
+        getGoals(user.id),
+      ]);
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        email: user.email,
+        dailyLogs: Object.entries(logs).map(([date, log]: [string, any]) => ({
+          date,
+          totalPoints: log.totalPoints,
+          entries: Object.values(log.entries).map((e: any) => ({
+            module: e.moduleKey,
+            item: e.itemId,
+            completed: e.completed,
+            notes: e.notes,
+          })),
+        })),
+        todos: todos.map((t) => ({
+          text: t.text,
+          priority: t.priority,
+          completed: t.completed,
+          dueDate: t.dueDate || null,
+          points: t.points,
+        })),
+        goals: goals.map((g) => ({
+          title: g.title,
+          description: g.description,
+          type: g.type,
+          status: g.status,
+          targetDate: g.targetDate || null,
+          points: g.points,
+        })),
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lifelog-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("数据导出成功！");
+    } catch {
+      toast.error("导出失败，请重试");
+    }
+  };
+
   const renderModuleEditor = (mod: Module) => (
     <div key={mod.key} className="bg-card rounded-xl shadow-card overflow-hidden">
       <button onClick={() => setExpandedModule(expandedModule === mod.key ? null : mod.key)} className="w-full flex items-center justify-between p-4">
