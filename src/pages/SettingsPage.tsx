@@ -185,7 +185,7 @@ export default function SettingsPage() {
           </button>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
-          <button className="flex items-center gap-3 w-full text-sm">
+          <button onClick={handleExportData} className="flex items-center gap-3 w-full text-sm">
             <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
           </button>
         </div>
