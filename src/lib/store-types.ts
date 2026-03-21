@@ -35,6 +35,13 @@ export interface GoalItem {
   createdAt: string;
 }
 
+export interface TodoCollection {
+  id: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
 export interface ModuleConfig {
   modules: Record<string, {
     name?: string;
