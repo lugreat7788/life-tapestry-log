@@ -110,42 +110,17 @@ export default function SettingsPage() {
     if (!user) return;
     try {
       toast.info("正在导出数据...");
-      const [logs, todos, goals] = await Promise.all([
-        getAllLogs(user.id),
-        getTodos(user.id),
-        getGoals(user.id),
-      ]);
-
+      const [logs, todos, goals] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id)]);
       const exportData = {
         exportDate: new Date().toISOString(),
         email: user.email,
         dailyLogs: Object.entries(logs).map(([date, log]: [string, any]) => ({
-          date,
-          totalPoints: log.totalPoints,
-          entries: Object.values(log.entries).map((e: any) => ({
-            module: e.moduleKey,
-            item: e.itemId,
-            completed: e.completed,
-            notes: e.notes,
-          })),
+          date, totalPoints: log.totalPoints,
+          entries: Object.values(log.entries).map((e: any) => ({ module: e.moduleKey, item: e.itemId, completed: e.completed, notes: e.notes })),
         })),
-        todos: todos.map((t) => ({
-          text: t.text,
-          priority: t.priority,
-          completed: t.completed,
-          dueDate: t.dueDate || null,
-          points: t.points,
-        })),
-        goals: goals.map((g) => ({
-          title: g.title,
-          description: g.description,
-          type: g.type,
-          status: g.status,
-          targetDate: g.targetDate || null,
-          points: g.points,
-        })),
+        todos: todos.map((t) => ({ text: t.text, priority: t.priority, completed: t.completed, dueDate: t.dueDate || null, points: t.points })),
+        goals: goals.map((g) => ({ title: g.title, description: g.description, type: g.type, status: g.status, targetDate: g.targetDate || null, points: g.points })),
       };
-
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -154,9 +129,56 @@ export default function SettingsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("数据导出成功！");
-    } catch {
-      toast.error("导出失败，请重试");
-    }
+    } catch { toast.error("导出失败，请重试"); }
+  };
+
+  const handleExportCSV = async () => {
+    if (!user) return;
+    try {
+      toast.info("正在导出CSV...");
+      const [logs, todos, goals] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id)]);
+
+      const csvSections: string[] = [];
+
+      // Daily logs section
+      csvSections.push("=== 每日打卡记录 ===");
+      csvSections.push("日期,模块,项目,已完成,得分,备注");
+      Object.entries(logs).sort().forEach(([date, log]: [string, any]) => {
+        Object.values(log.entries).forEach((e: any) => {
+          const notes = (e.notes || "").replace(/"/g, '""');
+          csvSections.push(`${date},${e.moduleKey},${e.itemId},${e.completed ? "是" : "否"},${e.completed ? "已得分" : "0"},"${notes}"`);
+        });
+      });
+
+      // Todos section
+      csvSections.push("");
+      csvSections.push("=== 待办事项 ===");
+      csvSections.push("内容,优先级,已完成,截止日期,积分");
+      todos.forEach((t) => {
+        const text = t.text.replace(/"/g, '""');
+        csvSections.push(`"${text}",${t.priority},${t.completed ? "是" : "否"},${t.dueDate || ""},${t.points}`);
+      });
+
+      // Goals section
+      csvSections.push("");
+      csvSections.push("=== 目标 ===");
+      csvSections.push("标题,描述,类型,状态,目标日期,积分");
+      goals.forEach((g) => {
+        const title = g.title.replace(/"/g, '""');
+        const desc = g.description.replace(/"/g, '""');
+        csvSections.push(`"${title}","${desc}",${g.type === "short_term" ? "近期" : "远期"},${g.status},${g.targetDate || ""},${g.points}`);
+      });
+
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csvSections.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lifelog-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV导出成功！");
+    } catch { toast.error("导出失败，请重试"); }
   };
 
   const renderModuleEditor = (mod: Module) => (
