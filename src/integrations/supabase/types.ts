@@ -89,6 +89,7 @@ export type Database = {
           item_id: string
           module_key: string
           notes: string | null
+          photo_urls: string[] | null
           updated_at: string
           user_id: string
         }
@@ -100,6 +101,7 @@ export type Database = {
           item_id: string
           module_key: string
           notes?: string | null
+          photo_urls?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -111,6 +113,7 @@ export type Database = {
           item_id?: string
           module_key?: string
           notes?: string | null
+          photo_urls?: string[] | null
           updated_at?: string
           user_id?: string
         }
