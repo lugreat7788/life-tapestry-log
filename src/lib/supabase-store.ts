@@ -237,6 +237,7 @@ export async function getTodos(userId: string): Promise<TodoItem[]> {
     dueDate: t.due_date || undefined,
     priority: t.priority as "low" | "medium" | "high",
     moduleTag: t.module_tag || undefined,
+    collectionId: (t as any).collection_id || undefined,
     completed: t.completed,
     points: t.points,
     createdAt: t.created_at,
