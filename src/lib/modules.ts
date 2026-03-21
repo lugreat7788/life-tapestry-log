@@ -53,8 +53,11 @@ export const CORE_MODULES: Module[] = [
     bgClass: "bg-module-health",
     fgClass: "text-module-health-fg",
     items: [
-      { id: "diet_log", name: "饮食记录", points: 10 },
-      { id: "sleep_log", name: "睡眠记录", points: 10 },
+      { id: "diet_breakfast", name: "早餐记录", points: 3 },
+      { id: "diet_lunch", name: "午餐记录", points: 3 },
+      { id: "diet_dinner", name: "晚餐记录", points: 4 },
+      { id: "body_status", name: "身体状况", points: 5 },
+      { id: "sleep_log", name: "睡眠记录", points: 5 },
       { id: "exercise_log", name: "运动记录", points: 10 },
     ],
   },

@@ -239,7 +239,12 @@ export default function SettingsPage() {
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
           <button onClick={handleExportData} className="flex items-center gap-3 w-full text-sm">
-            <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+            <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据 (JSON)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+          </button>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <button onClick={handleExportCSV} className="flex items-center gap-3 w-full text-sm">
+            <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据 (CSV)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
           </button>
         </div>
       </div>
