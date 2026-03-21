@@ -251,9 +251,10 @@ export async function addTodo(userId: string, todo: Omit<TodoItem, "id" | "creat
     due_date: todo.dueDate || null,
     priority: todo.priority,
     module_tag: todo.moduleTag || null,
+    collection_id: todo.collectionId || null,
     completed: todo.completed,
     points: todo.points,
-  });
+  } as any);
 }
 
 export async function updateTodo(id: string, updates: Partial<{ completed: boolean; text: string }>) {
