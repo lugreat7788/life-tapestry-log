@@ -350,3 +350,45 @@ export async function getProfile(userId: string) {
 export async function updateProfile(userId: string, updates: { display_name?: string; avatar_url?: string }) {
   await supabase.from("profiles").update(updates).eq("user_id", userId);
 }
+
+// ─── Todo Collections ───
+
+export async function getTodoCollections(userId: string): Promise<TodoCollection[]> {
+  const { data } = await supabase
+    .from("todo_collections")
+    .select("*")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true });
+
+  return (data || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    sortOrder: c.sort_order,
+    createdAt: c.created_at,
+  }));
+}
+
+export async function addTodoCollection(userId: string, name: string) {
+  const { data: existing } = await supabase
+    .from("todo_collections")
+    .select("sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? (existing[0] as any).sort_order + 1 : 0;
+
+  await supabase.from("todo_collections").insert({
+    user_id: userId,
+    name,
+    sort_order: nextOrder,
+  } as any);
+}
+
+export async function renameTodoCollection(id: string, name: string) {
+  await supabase.from("todo_collections").update({ name } as any).eq("id", id);
+}
+
+export async function deleteTodoCollection(id: string) {
+  await supabase.from("todo_collections").delete().eq("id", id);
+}
