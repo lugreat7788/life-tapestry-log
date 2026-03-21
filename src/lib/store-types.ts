@@ -19,6 +19,7 @@ export interface TodoItem {
   dueDate?: string;
   priority: "low" | "medium" | "high";
   moduleTag?: string;
+  collectionId?: string;
   completed: boolean;
   points: number;
   createdAt: string;
