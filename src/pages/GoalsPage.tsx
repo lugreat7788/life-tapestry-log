@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, Target, Calendar, Flag } from "lucide-react";
-import { getTodos, addTodo as addTodoDb, updateTodo, deleteTodo as deleteTodoDb, getGoals, addGoal as addGoalDb, updateGoalStatus, deleteGoal as deleteGoalDb } from "@/lib/supabase-store";
-import type { TodoItem, GoalItem } from "@/lib/store-types";
+import { Plus, Check, Trash2, Target, Calendar, Flag, FolderPlus, Pencil, X, Folder } from "lucide-react";
+import { getTodos, addTodo as addTodoDb, updateTodo, deleteTodo as deleteTodoDb, getGoals, addGoal as addGoalDb, updateGoalStatus, deleteGoal as deleteGoalDb, getTodoCollections, addTodoCollection, renameTodoCollection, deleteTodoCollection } from "@/lib/supabase-store";
+import type { TodoItem, GoalItem, TodoCollection } from "@/lib/store-types";
 import { MODULES } from "@/lib/modules";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const PRIORITY_COLORS = {
   low: "text-muted-foreground",
@@ -37,22 +44,32 @@ export default function GoalsPage() {
   const { user } = useAuth();
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
+  const [collections, setCollections] = useState<TodoCollection[]>([]);
+  const [activeCollection, setActiveCollection] = useState<string | null>(null); // null = "全部"
   const [showAddTodo, setShowAddTodo] = useState(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [newTodoText, setNewTodoText] = useState("");
   const [newTodoPriority, setNewTodoPriority] = useState<"low" | "medium" | "high">("medium");
   const [newTodoDueDate, setNewTodoDueDate] = useState("");
   const [newTodoModule, setNewTodoModule] = useState("");
+  const [newTodoCollection, setNewTodoCollection] = useState("");
   const [newGoalTitle, setNewGoalTitle] = useState("");
   const [newGoalDesc, setNewGoalDesc] = useState("");
   const [newGoalType, setNewGoalType] = useState<"short_term" | "long_term">("short_term");
   const [newGoalDate, setNewGoalDate] = useState("");
 
+  // Collection management state
+  const [showNewCollection, setShowNewCollection] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [editingCollection, setEditingCollection] = useState<TodoCollection | null>(null);
+  const [editCollectionName, setEditCollectionName] = useState("");
+
   const loadData = async () => {
     if (!user) return;
-    const [t, g] = await Promise.all([getTodos(user.id), getGoals(user.id)]);
+    const [t, g, c] = await Promise.all([getTodos(user.id), getGoals(user.id), getTodoCollections(user.id)]);
     setTodos(t);
     setGoals(g);
+    setCollections(c);
   };
 
   useEffect(() => { loadData(); }, [user]);
@@ -64,10 +81,11 @@ export default function GoalsPage() {
       dueDate: newTodoDueDate || undefined,
       priority: newTodoPriority,
       moduleTag: newTodoModule || undefined,
+      collectionId: newTodoCollection || undefined,
       completed: false,
       points: 5,
     });
-    setNewTodoText(""); setNewTodoDueDate(""); setNewTodoModule(""); setShowAddTodo(false);
+    setNewTodoText(""); setNewTodoDueDate(""); setNewTodoModule(""); setNewTodoCollection(""); setShowAddTodo(false);
     await loadData();
   };
 
@@ -105,8 +123,35 @@ export default function GoalsPage() {
     await loadData();
   };
 
-  const pendingTodos = todos.filter((t) => !t.completed);
-  const completedTodos = todos.filter((t) => t.completed);
+  const handleCreateCollection = async () => {
+    if (!newCollectionName.trim() || !user) return;
+    await addTodoCollection(user.id, newCollectionName.trim());
+    setNewCollectionName("");
+    setShowNewCollection(false);
+    await loadData();
+  };
+
+  const handleRenameCollection = async () => {
+    if (!editingCollection || !editCollectionName.trim()) return;
+    await renameTodoCollection(editingCollection.id, editCollectionName.trim());
+    setEditingCollection(null);
+    setEditCollectionName("");
+    await loadData();
+  };
+
+  const handleDeleteCollection = async (id: string) => {
+    await deleteTodoCollection(id);
+    if (activeCollection === id) setActiveCollection(null);
+    await loadData();
+  };
+
+  // Filter todos by active collection
+  const filteredTodos = activeCollection
+    ? todos.filter((t) => t.collectionId === activeCollection)
+    : todos;
+
+  const pendingTodos = filteredTodos.filter((t) => !t.completed);
+  const completedTodos = filteredTodos.filter((t) => t.completed);
   const shortTermGoals = goals.filter((g) => g.type === "short_term");
   const longTermGoals = goals.filter((g) => g.type === "long_term");
 
@@ -122,6 +167,71 @@ export default function GoalsPage() {
 
         <TabsContent value="todo">
           <div className="mt-4">
+            {/* Collection tabs */}
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+              <button
+                onClick={() => setActiveCollection(null)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                  activeCollection === null
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
+                )}
+              >
+                全部
+              </button>
+              {collections.map((col) => (
+                <button
+                  key={col.id}
+                  onClick={() => setActiveCollection(col.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 group",
+                    activeCollection === col.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  )}
+                >
+                  <Folder className="w-3 h-3" />
+                  {col.name}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingCollection(col); setEditCollectionName(col.name); }}
+                    className="opacity-0 group-hover:opacity-100 ml-0.5 hover:text-foreground"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                </button>
+              ))}
+              <button
+                onClick={() => setShowNewCollection(true)}
+                className="px-2 py-1.5 rounded-full text-xs text-muted-foreground hover:bg-accent transition-colors"
+                title="新建待办集"
+              >
+                <FolderPlus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* New collection inline input */}
+            <AnimatePresence>
+              {showNewCollection && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-3">
+                  <div className="flex items-center gap-2 bg-card rounded-xl shadow-card p-3">
+                    <Input
+                      placeholder="待办集名称..."
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleCreateCollection()}
+                      autoFocus
+                      className="h-8 text-sm"
+                    />
+                    <Button size="sm" onClick={handleCreateCollection} className="h-8 px-3">创建</Button>
+                    <Button size="sm" variant="ghost" onClick={() => { setShowNewCollection(false); setNewCollectionName(""); }} className="h-8 px-2">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="flex justify-end mb-3">
               <Button size="sm" onClick={() => setShowAddTodo(!showAddTodo)} className="rounded-full">
                 <Plus className="w-4 h-4 mr-1" />添加
@@ -144,14 +254,25 @@ export default function GoalsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Select value={newTodoModule} onValueChange={setNewTodoModule}>
-                      <SelectTrigger><SelectValue placeholder="关联模块（可选）" /></SelectTrigger>
-                      <SelectContent>
-                        {MODULES.map((m) => (
-                          <SelectItem key={m.key} value={m.key}>{m.icon} {m.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select value={newTodoModule} onValueChange={setNewTodoModule}>
+                        <SelectTrigger><SelectValue placeholder="关联模块（可选）" /></SelectTrigger>
+                        <SelectContent>
+                          {MODULES.map((m) => (
+                            <SelectItem key={m.key} value={m.key}>{m.icon} {m.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={newTodoCollection} onValueChange={setNewTodoCollection}>
+                        <SelectTrigger><SelectValue placeholder="待办集（可选）" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">无</SelectItem>
+                          {collections.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex gap-2">
                       <Button onClick={handleAddTodo} size="sm">确认</Button>
                       <Button variant="ghost" size="sm" onClick={() => setShowAddTodo(false)}>取消</Button>
@@ -169,17 +290,19 @@ export default function GoalsPage() {
               <AnimatePresence>
                 {pendingTodos.map((todo) => {
                   const mod = todo.moduleTag ? MODULES.find(m => m.key === todo.moduleTag) : null;
+                  const col = todo.collectionId ? collections.find(c => c.id === todo.collectionId) : null;
                   return (
                     <motion.div key={todo.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -100 }} className="bg-card rounded-xl shadow-card p-4">
                       <div className="flex items-center gap-3">
                         <button onClick={() => handleToggleTodo(todo.id, todo.completed)} className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 hover:border-primary/50 transition-colors shrink-0" />
                         <div className="flex-1 min-w-0">
                           <span className="text-sm">{todo.text}</span>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <Flag className={cn("w-3 h-3", PRIORITY_COLORS[todo.priority])} />
                             <span className={cn("text-xs", PRIORITY_COLORS[todo.priority])}>{PRIORITY_LABELS[todo.priority]}</span>
                             {todo.dueDate && <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{todo.dueDate}</span>}
                             {mod && <span className={cn("text-xs px-1.5 py-0.5 rounded-full", mod.bgClass, mod.fgClass)}>{mod.icon} {mod.name}</span>}
+                            {col && <span className="text-xs px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground flex items-center gap-0.5"><Folder className="w-3 h-3" />{col.name}</span>}
                           </div>
                         </div>
                         <button onClick={() => handleDeleteTodo(todo.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
@@ -270,6 +393,32 @@ export default function GoalsPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Rename collection dialog */}
+      <Dialog open={!!editingCollection} onOpenChange={(open) => { if (!open) setEditingCollection(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>编辑待办集</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={editCollectionName}
+            onChange={(e) => setEditCollectionName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleRenameCollection()}
+            placeholder="待办集名称"
+            autoFocus
+          />
+          <DialogFooter className="flex-row gap-2">
+            <Button onClick={handleRenameCollection} size="sm">保存</Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => { if (editingCollection) handleDeleteCollection(editingCollection.id); }}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

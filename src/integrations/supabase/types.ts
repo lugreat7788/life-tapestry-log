@@ -178,8 +178,36 @@ export type Database = {
         }
         Relationships: []
       }
+      todo_collections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       todos: {
         Row: {
+          collection_id: string | null
           completed: boolean
           created_at: string
           due_date: string | null
@@ -192,6 +220,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          collection_id?: string | null
           completed?: boolean
           created_at?: string
           due_date?: string | null
@@ -204,6 +233,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          collection_id?: string | null
           completed?: boolean
           created_at?: string
           due_date?: string | null
@@ -215,7 +245,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "todos_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "todo_collections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

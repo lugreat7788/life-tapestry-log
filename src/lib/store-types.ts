@@ -19,6 +19,7 @@ export interface TodoItem {
   dueDate?: string;
   priority: "low" | "medium" | "high";
   moduleTag?: string;
+  collectionId?: string;
   completed: boolean;
   points: number;
   createdAt: string;
@@ -32,6 +33,13 @@ export interface GoalItem {
   type: "short_term" | "long_term";
   status: "not_started" | "in_progress" | "completed";
   points: number;
+  createdAt: string;
+}
+
+export interface TodoCollection {
+  id: string;
+  name: string;
+  sortOrder: number;
   createdAt: string;
 }
 

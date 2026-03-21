@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import type { GoalItem, TodoItem, ModuleConfig } from "./store-types";
+import type { GoalItem, TodoItem, ModuleConfig, TodoCollection } from "./store-types";
 
-export type { LogEntry, DailyLog, TodoItem, GoalItem, ModuleConfig } from "./store-types";
+export type { LogEntry, DailyLog, TodoItem, GoalItem, ModuleConfig, TodoCollection } from "./store-types";
 
 // ─── Daily Logs ───
 
@@ -237,6 +237,7 @@ export async function getTodos(userId: string): Promise<TodoItem[]> {
     dueDate: t.due_date || undefined,
     priority: t.priority as "low" | "medium" | "high",
     moduleTag: t.module_tag || undefined,
+    collectionId: (t as any).collection_id || undefined,
     completed: t.completed,
     points: t.points,
     createdAt: t.created_at,
@@ -250,9 +251,10 @@ export async function addTodo(userId: string, todo: Omit<TodoItem, "id" | "creat
     due_date: todo.dueDate || null,
     priority: todo.priority,
     module_tag: todo.moduleTag || null,
+    collection_id: todo.collectionId || null,
     completed: todo.completed,
     points: todo.points,
-  });
+  } as any);
 }
 
 export async function updateTodo(id: string, updates: Partial<{ completed: boolean; text: string }>) {
@@ -347,4 +349,46 @@ export async function getProfile(userId: string) {
 
 export async function updateProfile(userId: string, updates: { display_name?: string; avatar_url?: string }) {
   await supabase.from("profiles").update(updates).eq("user_id", userId);
+}
+
+// ─── Todo Collections ───
+
+export async function getTodoCollections(userId: string): Promise<TodoCollection[]> {
+  const { data } = await supabase
+    .from("todo_collections")
+    .select("*")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true });
+
+  return (data || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    sortOrder: c.sort_order,
+    createdAt: c.created_at,
+  }));
+}
+
+export async function addTodoCollection(userId: string, name: string) {
+  const { data: existing } = await supabase
+    .from("todo_collections")
+    .select("sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? (existing[0] as any).sort_order + 1 : 0;
+
+  await supabase.from("todo_collections").insert({
+    user_id: userId,
+    name,
+    sort_order: nextOrder,
+  } as any);
+}
+
+export async function renameTodoCollection(id: string, name: string) {
+  await supabase.from("todo_collections").update({ name } as any).eq("id", id);
+}
+
+export async function deleteTodoCollection(id: string) {
+  await supabase.from("todo_collections").delete().eq("id", id);
 }
