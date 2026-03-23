@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,68 +7,68 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 10%;
+    --background: 120 10% 97%;
+    --foreground: 160 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 160 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 160 10% 15%;
 
-    --primary: 239 84% 67%;
+    --primary: 152 45% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 120 8% 94%;
+    --secondary-foreground: 160 10% 15%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 14% 46%;
+    --muted: 120 8% 94%;
+    --muted-foreground: 160 6% 50%;
 
-    --accent: 210 20% 96%;
-    --accent-foreground: 220 20% 10%;
+    --accent: 120 8% 94%;
+    --accent-foreground: 160 10% 15%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 60% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 92%;
-    --input: 214 20% 92%;
-    --ring: 239 84% 67%;
+    --border: 120 8% 90%;
+    --input: 120 8% 90%;
+    --ring: 152 45% 45%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* Module accent colors */
-    --module-health: 152 76% 91%;
-    --module-health-fg: 152 60% 30%;
-    --module-learning: 214 95% 93%;
-    --module-learning-fg: 214 60% 35%;
-    --module-goals: 45 96% 89%;
-    --module-goals-fg: 45 70% 30%;
-    --module-relationships: 330 90% 94%;
-    --module-relationships-fg: 330 60% 35%;
-    --module-daily-record: 270 95% 95%;
-    --module-daily-record-fg: 270 50% 40%;
-    --module-output: 25 100% 92%;
-    --module-output-fg: 25 60% 35%;
-    --module-challenge: 0 85% 92%;
-    --module-challenge-fg: 0 60% 35%;
-    --module-new-things: 180 60% 90%;
-    --module-new-things-fg: 180 50% 30%;
-    --module-entropy-reduction: 200 30% 92%;
-    --module-entropy-reduction-fg: 200 30% 35%;
+    /* Module accent colors — soft botanical palette */
+    --module-health: 152 30% 93%;
+    --module-health-fg: 152 35% 35%;
+    --module-learning: 200 30% 93%;
+    --module-learning-fg: 200 30% 35%;
+    --module-goals: 42 35% 92%;
+    --module-goals-fg: 42 30% 35%;
+    --module-relationships: 340 25% 93%;
+    --module-relationships-fg: 340 25% 38%;
+    --module-daily-record: 260 20% 94%;
+    --module-daily-record-fg: 260 20% 40%;
+    --module-output: 25 30% 93%;
+    --module-output-fg: 25 30% 38%;
+    --module-challenge: 8 30% 93%;
+    --module-challenge-fg: 8 30% 38%;
+    --module-new-things: 170 25% 92%;
+    --module-new-things-fg: 170 25% 35%;
+    --module-entropy-reduction: 190 20% 93%;
+    --module-entropy-reduction-fg: 190 20% 38%;
 
-    /* Shadows */
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
-    --shadow-elevated: 0 4px 12px 0 rgb(0 0 0 / 0.06), 0 2px 4px -1px rgb(0 0 0 / 0.04);
+    /* Shadows — softer, Apple-like */
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.03), 0 1px 2px -1px rgb(0 0 0 / 0.02);
+    --shadow-elevated: 0 8px 30px -8px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.03);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-background: 120 8% 97%;
+    --sidebar-foreground: 160 6% 30%;
+    --sidebar-primary: 160 10% 15%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 120 8% 94%;
+    --sidebar-accent-foreground: 160 10% 15%;
+    --sidebar-border: 120 8% 90%;
+    --sidebar-ring: 152 45% 45%;
   }
 }
 
@@ -78,15 +79,24 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
+    letter-spacing: -0.025em;
   }
 }
 
 @layer utilities {
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .glass {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
 }

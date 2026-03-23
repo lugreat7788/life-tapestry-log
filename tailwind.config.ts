@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Inter", "sans-serif"],
-        body: ["'Noto Sans SC'", "Inter", "sans-serif"],
+        display: ["-apple-system", "BlinkMacSystemFont", "Inter", "sans-serif"],
+        body: ["'Noto Sans SC'", "-apple-system", "BlinkMacSystemFont", "Inter", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
