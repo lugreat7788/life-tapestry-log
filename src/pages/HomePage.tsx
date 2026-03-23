@@ -48,40 +48,40 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
+      <div className="px-5 pt-8 pb-4 max-w-lg mx-auto">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-32" />
-          <div className="h-40 bg-muted rounded-2xl" />
+          <div className="h-7 bg-muted rounded-lg w-28" />
+          <div className="h-44 bg-muted rounded-3xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <div className="mb-5">
-        <h1 className="text-2xl font-display font-bold text-foreground">LifeLog</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
+    <div className="px-5 pt-8 pb-4 max-w-lg mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-display font-semibold text-foreground tracking-tight">LifeLog</h1>
+        <p className="text-sm text-muted-foreground mt-0.5 font-light">{today}</p>
       </div>
 
       <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} />
 
-      <div className="mt-6">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
-          📋 每日必修
+      <div className="mt-8">
+        <h2 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-widest">
+          每日必修
         </h2>
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           {CORE_MODULES.map((mod, i) => (
             <ModuleCard key={mod.key} module={mod} log={log} index={i} />
           ))}
         </div>
       </div>
 
-      <div className="mt-6">
-        <h2 className="text-sm font-semibold text-amber-600 mb-3 uppercase tracking-wider">
-          ⭐ 成长加分
+      <div className="mt-8">
+        <h2 className="text-xs font-medium text-primary mb-3 uppercase tracking-widest">
+          成长加分
         </h2>
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           {BONUS_MODULES.map((mod, i) => (
             <ModuleCard key={mod.key} module={mod} log={log} index={i} showBonus />
           ))}
