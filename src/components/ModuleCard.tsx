@@ -29,52 +29,54 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.3 }}
+      transition={{ delay: index * 0.03, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
       onClick={() => navigate(`/modules/${module.key}`)}
       className={cn(
-        "w-full text-left rounded-xl p-4 shadow-card transition-all duration-200 hover:shadow-elevated",
-        module.bgClass,
-        allDone && "ring-2 ring-primary/30",
-        showBonus && "ring-1 ring-amber-300/30"
+        "w-full text-left rounded-2xl p-4 transition-all duration-300",
+        "bg-card shadow-card hover:shadow-elevated",
+        allDone && "ring-1 ring-primary/20",
+        showBonus && "border border-dashed border-muted-foreground/15"
       )}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{module.icon}</span>
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-lg", module.bgClass)}>
+            {module.icon}
+          </div>
           <div>
-            <h3 className={cn("font-display font-semibold text-sm", module.fgClass)}>
+            <h3 className="font-display font-medium text-sm text-foreground">
               {module.name}
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {showBonus ? `+${earnedPoints}` : `${earnedPoints} / ${maxPoints}`} 分
+            <p className="text-xs text-muted-foreground mt-0.5 font-light">
+              {showBonus ? `+${earnedPoints}` : `${earnedPoints}/${maxPoints}`} 分
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={cn("text-xs font-medium", module.fgClass)}>
+          <span className="text-xs text-muted-foreground font-light">
             {completedCount}/{totalCount}
           </span>
           {allDone && (
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+              className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"
             >
-              <Check className="w-3.5 h-3.5 text-primary-foreground" />
+              <Check className="w-3 h-3 text-primary-foreground" />
             </motion.div>
           )}
         </div>
       </div>
 
-      <div className="mt-3 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+      <div className="mt-3 h-1 rounded-full bg-muted overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-foreground/30"
+          className="h-full rounded-full bg-primary/40"
           initial={{ width: 0 }}
           animate={{ width: `${(completedCount / totalCount) * 100}%` }}
-          transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.04 + 0.2 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.03 + 0.2 }}
         />
       </div>
     </motion.button>

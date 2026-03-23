@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Leaf } from "lucide-react";
 
 export default function AuthPage() {
   const { user, loading: authLoading } = useAuth();
@@ -18,7 +18,7 @@ export default function AuthPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">加载中...</div>
+        <div className="animate-pulse text-muted-foreground font-light">加载中...</div>
       </div>
     );
   }
@@ -88,18 +88,21 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-display font-bold text-foreground">LifeLog</h1>
-          <p className="text-sm text-muted-foreground mt-2">我的成长记录本</p>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-4">
+            <Leaf className="w-7 h-7 text-primary" />
+          </div>
+          <h1 className="text-3xl font-display font-semibold text-foreground tracking-tight">LifeLog</h1>
+          <p className="text-sm text-muted-foreground mt-1.5 font-light">记录每一天的成长</p>
         </div>
 
-        <div className="bg-card rounded-2xl shadow-elevated p-6">
+        <div className="bg-card rounded-3xl shadow-elevated p-6">
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="w-full mb-4">
-              <TabsTrigger value="login" className="flex-1">登录</TabsTrigger>
-              <TabsTrigger value="register" className="flex-1">注册</TabsTrigger>
+            <TabsList className="w-full mb-5 bg-muted rounded-xl h-10">
+              <TabsTrigger value="login" className="flex-1 rounded-lg text-sm">登录</TabsTrigger>
+              <TabsTrigger value="register" className="flex-1 rounded-lg text-sm">注册</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
@@ -111,7 +114,7 @@ export default function AuthPage() {
                     placeholder="邮箱地址"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-11 rounded-xl border-border/60 bg-background"
                   />
                 </div>
                 <div className="relative">
@@ -122,15 +125,15 @@ export default function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSignIn()}
-                    className="pl-10"
+                    className="pl-10 h-11 rounded-xl border-border/60 bg-background"
                   />
                 </div>
-                <Button onClick={handleSignIn} disabled={loading} className="w-full">
+                <Button onClick={handleSignIn} disabled={loading} className="w-full h-11 rounded-xl font-medium">
                   {loading ? "登录中..." : "登录"}
                 </Button>
                 <button
                   onClick={handleForgotPassword}
-                  className="text-xs text-muted-foreground hover:text-primary w-full text-center"
+                  className="text-xs text-muted-foreground hover:text-primary w-full text-center transition-colors"
                 >
                   忘记密码？
                 </button>
@@ -146,7 +149,7 @@ export default function AuthPage() {
                     placeholder="邮箱地址"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-11 rounded-xl border-border/60 bg-background"
                   />
                 </div>
                 <div className="relative">
@@ -157,30 +160,30 @@ export default function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSignUp()}
-                    className="pl-10"
+                    className="pl-10 h-11 rounded-xl border-border/60 bg-background"
                   />
                 </div>
-                <Button onClick={handleSignUp} disabled={loading} className="w-full">
+                <Button onClick={handleSignUp} disabled={loading} className="w-full h-11 rounded-xl font-medium">
                   {loading ? "注册中..." : "注册"}
                 </Button>
               </div>
             </TabsContent>
           </Tabs>
 
-          <div className="mt-4">
+          <div className="mt-5">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
+                <div className="w-full border-t border-border/40" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-card px-2 text-muted-foreground">或</span>
+                <span className="bg-card px-3 text-muted-foreground font-light">或</span>
               </div>
             </div>
             <Button
               variant="outline"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full mt-4"
+              className="w-full mt-4 h-11 rounded-xl border-border/60"
             >
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -192,6 +195,10 @@ export default function AuthPage() {
             </Button>
           </div>
         </div>
+
+        <p className="text-center text-[11px] text-muted-foreground/60 mt-6 font-light">
+          用心记录，与自然同行 🌿
+        </p>
       </div>
     </div>
   );
