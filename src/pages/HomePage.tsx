@@ -74,7 +74,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} />
+      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} />
 
       <h2 className="text-[10px] font-medium text-muted-foreground mt-4 mb-3 uppercase tracking-widest">
         每日必修

@@ -188,6 +188,16 @@ export async function getAllLogs(userId: string) {
   return result;
 }
 
+// ─── All-Time Points ───
+
+export async function getAllTimePoints(userId: string): Promise<number> {
+  const { data } = await supabase
+    .from("daily_logs")
+    .select("total_points")
+    .eq("user_id", userId);
+  return (data || []).reduce((sum, log) => sum + (log.total_points || 0), 0);
+}
+
 // ─── Streak & Week Points ───
 
 export async function getStreakDays(userId: string): Promise<number> {
