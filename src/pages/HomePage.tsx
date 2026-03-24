@@ -44,7 +44,7 @@ export default function HomePage() {
     );
 
   const corePoints = calcPoints(CORE_MODULES);
-  const bonusPoints = calcPoints(BONUS_MODULES);
+  const bonusPoints = 0;
 
   if (loading) {
     return (
