@@ -15,7 +15,7 @@ export default function HeroCard({ corePoints, bonusPoints }: HeroCardProps) {
   const totalPoints = corePoints + bonusPoints;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-primary px-5 py-4 text-primary-foreground shadow-elevated">
+    <div className="relative overflow-hidden rounded-xl bg-primary px-4 py-3 text-primary-foreground shadow-elevated">
       <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-primary-foreground/8" />
 
       <div className="relative z-10 flex items-center justify-between">
