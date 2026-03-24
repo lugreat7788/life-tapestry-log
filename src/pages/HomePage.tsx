@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
-import { CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
+import { CORE_MODULES } from "@/lib/modules";
 import { getDailyLog } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import type { DailyLog } from "@/lib/store-types";
@@ -44,7 +44,7 @@ export default function HomePage() {
     );
 
   const corePoints = calcPoints(CORE_MODULES);
-  const bonusPoints = calcPoints(BONUS_MODULES);
+  const bonusPoints = 0;
 
   if (loading) {
     return (
@@ -77,16 +77,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-xs font-medium text-primary mb-3 uppercase tracking-widest">
-          成长加分
-        </h2>
-        <div className="grid gap-2.5">
-          {BONUS_MODULES.map((mod, i) => (
-            <ModuleCard key={mod.key} module={mod} log={log} index={i} showBonus />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
