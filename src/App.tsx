@@ -10,6 +10,7 @@ import ModulesPage from "@/pages/ModulesPage";
 import ModuleDetailPage from "@/pages/ModuleDetailPage";
 import GoalsPage from "@/pages/GoalsPage";
 import StatsPage from "@/pages/StatsPage";
+import HistoryEditPage from "@/pages/HistoryEditPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AuthPage from "@/pages/AuthPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
