@@ -42,7 +42,7 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-lg", module.bgClass)}>
+          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-base", module.bgClass)}>
             {module.icon}
           </div>
           <div>
