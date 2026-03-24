@@ -20,6 +20,7 @@ import type { DailyLog } from "@/lib/store-types";
 
 interface ModuleDetailProps {
   moduleKey: ModuleKey;
+  date?: Date;
 }
 
 const DIET_ITEM_IDS = ["diet_breakfast", "diet_lunch", "diet_dinner"];
