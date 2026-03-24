@@ -34,7 +34,7 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
       transition={{ delay: index * 0.03, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
       onClick={() => navigate(`/modules/${module.key}`)}
       className={cn(
-        "w-full text-left rounded-2xl p-4 transition-all duration-300",
+        "w-full text-left rounded-xl p-3 transition-all duration-300",
         "bg-card shadow-card hover:shadow-elevated",
         allDone && "ring-1 ring-primary/20",
         showBonus && "border border-dashed border-muted-foreground/15"
@@ -42,7 +42,7 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-lg", module.bgClass)}>
+          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-base", module.bgClass)}>
             {module.icon}
           </div>
           <div>
@@ -71,7 +71,7 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
         </div>
       </div>
 
-      <div className="mt-3 h-1 rounded-full bg-muted overflow-hidden">
+      <div className="mt-2 h-0.5 rounded-full bg-muted overflow-hidden">
         <motion.div
           className="h-full rounded-full bg-primary/40"
           initial={{ width: 0 }}

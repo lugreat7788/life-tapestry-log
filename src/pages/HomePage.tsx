@@ -58,23 +58,23 @@ export default function HomePage() {
   }
 
   return (
-    <div className="px-5 pt-8 pb-4 max-w-lg mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-display font-semibold text-foreground tracking-tight">LifeLog</h1>
-        <p className="text-sm text-muted-foreground mt-0.5 font-light">{today}</p>
+    <div className="px-4 pt-4 pb-2 max-w-lg mx-auto">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h1 className="text-lg font-display font-semibold text-foreground tracking-tight">LifeLog</h1>
+          <p className="text-[11px] text-muted-foreground font-light">{today}</p>
+        </div>
       </div>
 
       <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} />
 
-      <div className="mt-8">
-        <h2 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-widest">
-          每日必修
-        </h2>
-        <div className="grid gap-2.5">
-          {CORE_MODULES.map((mod, i) => (
-            <ModuleCard key={mod.key} module={mod} log={log} index={i} />
-          ))}
-        </div>
+      <h2 className="text-[10px] font-medium text-muted-foreground mt-3 mb-2 uppercase tracking-widest">
+        每日必修
+      </h2>
+      <div className="grid gap-1.5">
+        {CORE_MODULES.map((mod, i) => (
+          <ModuleCard key={mod.key} module={mod} log={log} index={i} />
+        ))}
       </div>
 
     </div>
