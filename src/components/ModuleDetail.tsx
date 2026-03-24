@@ -70,7 +70,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
 
   const handleNotes = async (itemId: string, notes: string) => {
     if (!user) return;
-    await updateEntryNotes(user.id, itemId, moduleKey, notes);
+    await updateEntryNotes(user.id, itemId, moduleKey, notes, date);
     await loadLog();
   };
 
