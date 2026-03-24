@@ -4,19 +4,27 @@ import { zhCN } from "date-fns/locale";
 import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
 import { CORE_MODULES } from "@/lib/modules";
-import { getDailyLog } from "@/lib/supabase-store";
+import { getDailyLog, getStreakDays, getAllTimePoints } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import type { DailyLog } from "@/lib/store-types";
 
 export default function HomePage() {
   const { user } = useAuth();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
+  const [streakDays, setStreakDays] = useState(0);
+  const [allTimePoints, setAllTimePoints] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const loadLog = useCallback(async () => {
     if (!user) return;
-    const data = await getDailyLog(user.id);
+    const [data, streak, total] = await Promise.all([
+      getDailyLog(user.id),
+      getStreakDays(user.id),
+      getAllTimePoints(user.id),
+    ]);
     setLog(data);
+    setStreakDays(streak);
+    setAllTimePoints(total);
     setLoading(false);
   }, [user]);
 
@@ -66,7 +74,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} />
+      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} />
 
       <h2 className="text-[10px] font-medium text-muted-foreground mt-4 mb-3 uppercase tracking-widest">
         每日必修
