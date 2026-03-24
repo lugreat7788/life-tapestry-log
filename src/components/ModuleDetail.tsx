@@ -51,7 +51,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
       });
       setPhotoUrls(urls);
     }
-  }, [user]);
+  }, [user, date]);
 
   useEffect(() => {
     loadLog();
