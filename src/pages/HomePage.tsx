@@ -17,8 +17,14 @@ export default function HomePage() {
 
   const loadLog = useCallback(async () => {
     if (!user) return;
-    const data = await getDailyLog(user.id);
+    const [data, streak, total] = await Promise.all([
+      getDailyLog(user.id),
+      getStreakDays(user.id),
+      getAllTimePoints(user.id),
+    ]);
     setLog(data);
+    setStreakDays(streak);
+    setAllTimePoints(total);
     setLoading(false);
   }, [user]);
 
