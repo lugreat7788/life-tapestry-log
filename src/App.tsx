@@ -41,6 +41,7 @@ function ProtectedRoutes() {
         <Route path="/modules/:moduleKey" element={<ModuleDetailPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/stats/date/:dateStr" element={<HistoryEditPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
