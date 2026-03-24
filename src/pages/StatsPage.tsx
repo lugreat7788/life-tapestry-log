@@ -136,10 +136,9 @@ export default function StatsPage() {
           {daysInMonth.map((day) => {
             const level = getCompletionLevel(day);
             const isToday = isSameDay(day, new Date());
-            const isSelected = selectedDate && isSameDay(day, selectedDate);
             const scores = getScoreForDate(day);
             return (
-              <button key={day.toISOString()} onClick={() => setSelectedDate(day)} className={cn("aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-all relative", level > 0 ? LEVEL_COLORS[level] : "hover:bg-muted", isToday && "ring-2 ring-primary", isSelected && "ring-2 ring-foreground")}>
+              <button key={day.toISOString()} onClick={() => handleDateClick(day)} className={cn("aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-all relative", level > 0 ? LEVEL_COLORS[level] : "hover:bg-muted", isToday && "ring-2 ring-primary")}>
                 <span className={cn("font-medium", level >= 3 ? "text-primary-foreground" : "text-foreground")}>{format(day, "d")}</span>
                 {scores.total > 0 && <span className={cn("text-[8px] leading-none", level >= 3 ? "text-primary-foreground/70" : "text-muted-foreground")}>{scores.total}</span>}
               </button>
