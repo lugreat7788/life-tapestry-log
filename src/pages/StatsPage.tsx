@@ -28,11 +28,11 @@ import {
 
 export default function StatsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [weekPoints, setWeekPoints] = useState<number[]>([0,0,0,0,0,0,0]);
   const [streak, setStreak] = useState(0);
   const [allLogs, setAllLogs] = useState<Record<string, any>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
