@@ -77,16 +77,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-xs font-medium text-primary mb-3 uppercase tracking-widest">
-          成长加分
-        </h2>
-        <div className="grid gap-2.5">
-          {BONUS_MODULES.map((mod, i) => (
-            <ModuleCard key={mod.key} module={mod} log={log} index={i} showBonus />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
