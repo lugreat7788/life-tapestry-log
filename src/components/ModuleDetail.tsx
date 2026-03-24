@@ -64,7 +64,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
 
   const handleToggle = async (itemId: string, points: number) => {
     if (!user) return;
-    await toggleEntry(user.id, moduleKey, itemId, points);
+    await toggleEntry(user.id, moduleKey, itemId, points, date);
     await loadLog();
   };
 
