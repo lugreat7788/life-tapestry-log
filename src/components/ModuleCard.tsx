@@ -71,7 +71,7 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
         </div>
       </div>
 
-      <div className="mt-3 h-1 rounded-full bg-muted overflow-hidden">
+      <div className="mt-2 h-0.5 rounded-full bg-muted overflow-hidden">
         <motion.div
           className="h-full rounded-full bg-primary/40"
           initial={{ width: 0 }}

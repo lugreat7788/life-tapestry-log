@@ -24,7 +24,7 @@ export default function HeroCard({ corePoints, bonusPoints }: HeroCardProps) {
             key={totalPoints}
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
-            className="text-3xl font-display font-semibold tracking-tighter"
+            className="text-2xl font-display font-semibold tracking-tighter"
           >
             {totalPoints}
           </motion.span>
