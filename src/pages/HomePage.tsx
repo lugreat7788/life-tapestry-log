@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
-import { CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
+import { CORE_MODULES } from "@/lib/modules";
 import { getDailyLog } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import type { DailyLog } from "@/lib/store-types";
