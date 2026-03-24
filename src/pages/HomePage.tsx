@@ -11,6 +11,8 @@ import type { DailyLog } from "@/lib/store-types";
 export default function HomePage() {
   const { user } = useAuth();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
+  const [streakDays, setStreakDays] = useState(0);
+  const [allTimePoints, setAllTimePoints] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const loadLog = useCallback(async () => {
