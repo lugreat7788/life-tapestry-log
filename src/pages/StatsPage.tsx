@@ -19,12 +19,6 @@ import {
   PolarAngleAxis,
   Radar,
 } from "recharts";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 
 export default function StatsPage() {
   const { user } = useAuth();
