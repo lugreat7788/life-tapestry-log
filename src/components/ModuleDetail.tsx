@@ -36,7 +36,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
 
   const loadLog = useCallback(async () => {
     if (!user) return;
-    const data = await getDailyLog(user.id);
+    const data = await getDailyLog(user.id, date);
     setLog(data);
 
     // Load photos for entries
