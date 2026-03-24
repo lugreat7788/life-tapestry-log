@@ -10,6 +10,7 @@ import ModulesPage from "@/pages/ModulesPage";
 import ModuleDetailPage from "@/pages/ModuleDetailPage";
 import GoalsPage from "@/pages/GoalsPage";
 import StatsPage from "@/pages/StatsPage";
+import HistoryEditPage from "@/pages/HistoryEditPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AuthPage from "@/pages/AuthPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -40,6 +41,7 @@ function ProtectedRoutes() {
         <Route path="/modules/:moduleKey" element={<ModuleDetailPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/stats/date/:dateStr" element={<HistoryEditPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>

@@ -20,11 +20,12 @@ import type { DailyLog } from "@/lib/store-types";
 
 interface ModuleDetailProps {
   moduleKey: ModuleKey;
+  date?: Date;
 }
 
 const DIET_ITEM_IDS = ["diet_breakfast", "diet_lunch", "diet_dinner"];
 
-export default function ModuleDetail({ moduleKey }: ModuleDetailProps) {
+export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const module = MODULES.find((m) => m.key === moduleKey)!;
   const { user } = useAuth();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
@@ -35,7 +36,7 @@ export default function ModuleDetail({ moduleKey }: ModuleDetailProps) {
 
   const loadLog = useCallback(async () => {
     if (!user) return;
-    const data = await getDailyLog(user.id);
+    const data = await getDailyLog(user.id, date);
     setLog(data);
 
     // Load photos for entries
@@ -50,7 +51,7 @@ export default function ModuleDetail({ moduleKey }: ModuleDetailProps) {
       });
       setPhotoUrls(urls);
     }
-  }, [user]);
+  }, [user, date]);
 
   useEffect(() => {
     loadLog();
@@ -63,13 +64,13 @@ export default function ModuleDetail({ moduleKey }: ModuleDetailProps) {
 
   const handleToggle = async (itemId: string, points: number) => {
     if (!user) return;
-    await toggleEntry(user.id, moduleKey, itemId, points);
+    await toggleEntry(user.id, moduleKey, itemId, points, date);
     await loadLog();
   };
 
   const handleNotes = async (itemId: string, notes: string) => {
     if (!user) return;
-    await updateEntryNotes(user.id, itemId, moduleKey, notes);
+    await updateEntryNotes(user.id, itemId, moduleKey, notes, date);
     await loadLog();
   };
 
