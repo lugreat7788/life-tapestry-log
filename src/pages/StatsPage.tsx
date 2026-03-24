@@ -179,51 +179,6 @@ export default function StatsPage() {
         </div>
       </div>
 
-      <Drawer open={!!selectedDate} onOpenChange={(open) => !open && setSelectedDate(null)}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>{selectedDate && format(selectedDate, "yyyy年M月d日 EEEE", { locale: zhCN })}</DrawerTitle>
-          </DrawerHeader>
-          {selectedDetail && (
-            <div className="px-4 pb-8 space-y-4 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-primary/10 rounded-lg p-3 text-center">
-                  <p className="text-lg font-display font-bold text-primary">{selectedDetail.scores.core}</p>
-                  <p className="text-[10px] text-muted-foreground">核心分 /100</p>
-                </div>
-                <div className="bg-module-goals rounded-lg p-3 text-center">
-                  <p className="text-lg font-display font-bold text-module-goals-fg">+{selectedDetail.scores.bonus}</p>
-                  <p className="text-[10px] text-muted-foreground">加分</p>
-                </div>
-                <div className="bg-muted rounded-lg p-3 text-center">
-                  <p className="text-lg font-display font-bold text-foreground">{selectedDetail.scores.total}</p>
-                  <p className="text-[10px] text-muted-foreground">总分</p>
-                </div>
-              </div>
-              {selectedDetail.completedItems.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-6">当天没有完成记录</p>
-              ) : (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">完成项目 ({selectedDetail.completedItems.length})</h3>
-                  {selectedDetail.completedItems.map((item, idx) => (
-                    <div key={idx} className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{item.moduleIcon}</span>
-                          <span className="text-sm font-medium">{item.itemName}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">+{item.points}分</span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{item.moduleName}</p>
-                      {item.notes && <p className="text-xs text-muted-foreground mt-1 border-t border-border pt-1">{item.notes}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </DrawerContent>
-      </Drawer>
     </div>
   );
 }
