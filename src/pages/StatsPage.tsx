@@ -89,24 +89,9 @@ export default function StatsPage() {
 
   const LEVEL_COLORS = ["", "bg-primary/20", "bg-primary/40", "bg-primary/60", "bg-primary/90"];
 
-  const selectedDetail = useMemo(() => {
-    if (!selectedDate) return null;
-    const scores = getScoreForDate(selectedDate);
-    const key = format(selectedDate, "yyyy-MM-dd");
-    const log = allLogs[key];
-    const completedItems: Array<{ moduleName: string; moduleIcon: string; itemName: string; points: number; notes: string }> = [];
-    if (log) {
-      MODULES.forEach((mod) => {
-        mod.items.forEach((item) => {
-          const entry = log.entries[item.id];
-          if (entry?.completed) {
-            completedItems.push({ moduleName: mod.name, moduleIcon: mod.icon, itemName: item.name, points: item.points, notes: entry.notes || "" });
-          }
-        });
-      });
-    }
-    return { scores, completedItems, date: selectedDate };
-  }, [selectedDate, allLogs]);
+  const handleDateClick = (day: Date) => {
+    navigate(`/stats/date/${format(day, "yyyy-MM-dd")}`);
+  };
 
   const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 
