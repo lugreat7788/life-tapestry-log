@@ -4,7 +4,7 @@ import { zhCN } from "date-fns/locale";
 import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
 import { CORE_MODULES } from "@/lib/modules";
-import { getDailyLog } from "@/lib/supabase-store";
+import { getDailyLog, getStreakDays, getAllTimePoints } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import type { DailyLog } from "@/lib/store-types";
 
