@@ -25,7 +25,7 @@ interface ModuleDetailProps {
 
 const DIET_ITEM_IDS = ["diet_breakfast", "diet_lunch", "diet_dinner"];
 
-export default function ModuleDetail({ moduleKey }: ModuleDetailProps) {
+export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const module = MODULES.find((m) => m.key === moduleKey)!;
   const { user } = useAuth();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
