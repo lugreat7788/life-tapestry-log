@@ -109,16 +109,41 @@ export default function StatsPage() {
     return { core, bonus, total: log.totalPoints };
   };
 
-  const getCompletionLevel = (date: Date): number => {
-    const { core } = getScoreForDate(date);
-    if (core === 0) return 0;
-    if (core < 30) return 1;
-    if (core < 60) return 2;
-    if (core < 100) return 3;
-    return 4;
+  // Detailed breakdown for calendar cells
+  const getCalendarCellData = (date: Date) => {
+    const key = format(date, "yyyy-MM-dd");
+    const log = allLogs[key];
+    if (!log) return { dailyHealthPts: 0, learnOutputPts: 0, bonusPts: 0, hasExercise: false, total: 0 };
+
+    // daily_record + health → background
+    const dailyHealthPts = ["daily_record", "health"].reduce((sum, modKey) => {
+      const mod = CORE_MODULES.find((m) => m.key === modKey);
+      if (!mod) return sum;
+      return sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0);
+    }, 0);
+
+    // learning + output → border
+    const learnOutputPts = ["learning", "output"].reduce((sum, modKey) => {
+      const mod = CORE_MODULES.find((m) => m.key === modKey);
+      if (!mod) return sum;
+      return sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0);
+    }, 0);
+
+    // bonus modules → stars
+    const bonusPts = BONUS_MODULES.reduce((sum, mod) => sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0), 0);
+
+    // exercise
+    const hasExercise = !!log.entries["exercise_log"]?.completed;
+
+    return { dailyHealthPts, learnOutputPts, bonusPts, hasExercise, total: log.totalPoints };
   };
 
-  const LEVEL_COLORS = ["", "bg-primary/20", "bg-primary/40", "bg-primary/60", "bg-primary/90"];
+  // Max possible: daily_record(30) + health(30) = 60
+  const getBgOpacity = (pts: number) => Math.min(pts / 50, 1);
+  // Max possible: learning(20) + output(20) = 40
+  const getBorderOpacity = (pts: number) => Math.min(pts / 30, 1);
+  // Bonus stars: 1 star per 10 pts, max 3
+  const getStarCount = (pts: number) => Math.min(Math.floor(pts / 10), 3);
 
   const handleDateClick = (day: Date) => {
     setSelectedDate((prev) => prev && isSameDay(prev, day) ? null : day);
@@ -215,22 +240,56 @@ export default function StatsPage() {
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: startDayOfWeek }).map((_, i) => (<div key={`empty-${i}`} className="aspect-square" />))}
           {daysInMonth.map((day) => {
-            const level = getCompletionLevel(day);
             const isToday = isSameDay(day, new Date());
-            const scores = getScoreForDate(day);
+            const cell = getCalendarCellData(day);
             const isSelected = selectedDate && isSameDay(day, selectedDate);
+            const bgAlpha = getBgOpacity(cell.dailyHealthPts);
+            const borderAlpha = getBorderOpacity(cell.learnOutputPts);
+            const stars = getStarCount(cell.bonusPts);
+            const isDark = bgAlpha > 0.5;
             return (
-              <button key={day.toISOString()} onClick={() => handleDateClick(day)} className={cn("aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-all relative", level > 0 ? LEVEL_COLORS[level] : "hover:bg-muted", isToday && "ring-2 ring-primary", isSelected && "ring-2 ring-foreground")}>
-                <span className={cn("font-medium", level >= 3 ? "text-primary-foreground" : "text-foreground")}>{format(day, "d")}</span>
-                {scores.total > 0 && <span className={cn("text-[8px] leading-none", level >= 3 ? "text-primary-foreground/70" : "text-muted-foreground")}>{scores.total}</span>}
+              <button
+                key={day.toISOString()}
+                onClick={() => handleDateClick(day)}
+                className={cn(
+                  "aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] transition-all relative overflow-hidden",
+                  !cell.total && "hover:bg-muted",
+                  isToday && "ring-2 ring-primary",
+                  isSelected && "ring-2 ring-foreground",
+                )}
+                style={{
+                  backgroundColor: cell.dailyHealthPts > 0 ? `hsla(152, 45%, 45%, ${bgAlpha * 0.85})` : undefined,
+                  boxShadow: cell.learnOutputPts > 0 ? `inset 0 0 0 2px hsla(38, 80%, 50%, ${borderAlpha})` : undefined,
+                }}
+              >
+                <span className={cn("font-medium leading-none", isDark ? "text-white" : "text-foreground")}>{format(day, "d")}</span>
+                {/* Stars for bonus */}
+                {stars > 0 && (
+                  <span className="text-[7px] leading-none mt-0.5">
+                    {"✨".repeat(stars)}
+                  </span>
+                )}
+                {/* Exercise icon */}
+                {cell.hasExercise && (
+                  <span className="absolute bottom-0.5 right-0.5 text-[7px] leading-none">🏃</span>
+                )}
               </button>
             );
           })}
         </div>
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <span className="text-[10px] text-muted-foreground">少</span>
-          {[1, 2, 3, 4].map((l) => (<div key={l} className={cn("w-3 h-3 rounded-sm", LEVEL_COLORS[l])} />))}
-          <span className="text-[10px] text-muted-foreground">多</span>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-3 text-[9px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsla(152, 45%, 45%, 0.3)" }} />
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsla(152, 45%, 45%, 0.85)" }} />
+            记录+健康
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm border-2" style={{ borderColor: "hsla(38, 80%, 50%, 0.4)" }} />
+            <span className="w-3 h-3 rounded-sm border-2" style={{ borderColor: "hsla(38, 80%, 50%, 1)" }} />
+            学习+输出
+          </span>
+          <span>✨ 成长加分</span>
+          <span>🏃 有运动</span>
         </div>
       </div>
 
