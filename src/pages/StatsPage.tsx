@@ -309,18 +309,17 @@ export default function StatsPage() {
                         key={i}
                         className="border border-border rounded-lg p-2.5 hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => {
-                          setSelectedDate(new Date(r.date));
-                          setShowSearch(false);
-                          setSearchQuery("");
+                          if (r.onClick) r.onClick();
+                          else { setShowSearch(false); setSearchQuery(""); }
                         }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[10px] text-muted-foreground">{format(new Date(r.date), "yyyy年M月d日")}</span>
-                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{r.moduleName}</span>
+                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{r.category}</span>
                         </div>
-                        <p className="text-xs font-medium text-foreground">{r.itemName}</p>
-                        {r.notes && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.notes}</p>
+                        <p className="text-xs font-medium text-foreground">{r.title}</p>
+                        {r.detail && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.detail}</p>
                         )}
                       </div>
                     ))}
