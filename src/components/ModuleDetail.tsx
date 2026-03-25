@@ -345,19 +345,39 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   </DrawerTrigger>
                 </div>
 
-                {photos.length > 0 && (
-                  <div className="px-4 pb-3 flex gap-2 overflow-x-auto">
-                    {photos.map((url, i) => (
-                      <div key={i} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden group">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => handleRemovePhoto(item.id, url)}
-                          className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3 text-white" />
-                        </button>
+                {(photos.length > 0 || files.length > 0) && (
+                  <div className="px-4 pb-3 space-y-2">
+                    {photos.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto">
+                        {photos.map((url, i) => (
+                          <div key={i} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden group">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => handleRemovePhoto(item.id, url)}
+                              className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                    {files.length > 0 && (
+                      <div className="flex flex-col gap-1">
+                        {files.map((url, i) => {
+                          const fileName = decodeURIComponent(url.split("/").pop() || "文件");
+                          return (
+                            <div key={i} className="flex items-center gap-1.5 text-[10px] bg-muted/50 rounded-lg px-2 py-1.5 group">
+                              <FileText className="w-3 h-3 text-muted-foreground shrink-0" />
+                              <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate flex-1">{fileName}</a>
+                              <button onClick={() => handleRemoveFile(item.id, url)} className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
