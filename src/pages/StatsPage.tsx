@@ -218,8 +218,9 @@ export default function StatsPage() {
             const level = getCompletionLevel(day);
             const isToday = isSameDay(day, new Date());
             const scores = getScoreForDate(day);
+            const isSelected = selectedDate && isSameDay(day, selectedDate);
             return (
-              <button key={day.toISOString()} onClick={() => handleDateClick(day)} className={cn("aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-all relative", level > 0 ? LEVEL_COLORS[level] : "hover:bg-muted", isToday && "ring-2 ring-primary")}>
+              <button key={day.toISOString()} onClick={() => handleDateClick(day)} className={cn("aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-all relative", level > 0 ? LEVEL_COLORS[level] : "hover:bg-muted", isToday && "ring-2 ring-primary", isSelected && "ring-2 ring-foreground")}>
                 <span className={cn("font-medium", level >= 3 ? "text-primary-foreground" : "text-foreground")}>{format(day, "d")}</span>
                 {scores.total > 0 && <span className={cn("text-[8px] leading-none", level >= 3 ? "text-primary-foreground/70" : "text-muted-foreground")}>{scores.total}</span>}
               </button>
@@ -232,6 +233,112 @@ export default function StatsPage() {
           <span className="text-[10px] text-muted-foreground">多</span>
         </div>
       </div>
+
+      {/* Selected Date Detail */}
+      <AnimatePresence>
+        {selectedDate && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden mb-6"
+          >
+            <div className="bg-card rounded-xl shadow-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-foreground">
+                  {format(selectedDate, "M月d日 EEEE", { locale: zhCN })}
+                </h2>
+                <button onClick={() => setSelectedDate(null)} className="text-muted-foreground hover:text-foreground p-1">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {!selectedDateLog ? (
+                <p className="text-xs text-muted-foreground py-4 text-center">当天无记录</p>
+              ) : (
+                <div className="space-y-3">
+                  {/* Core modules */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">每日必修</p>
+                    {coreModules.map((mod) => {
+                      const completedItems = mod.items.filter((item) => selectedDateLog.entries[item.id]?.completed);
+                      const modulePoints = completedItems.reduce((s, item) => s + item.points, 0);
+                      return (
+                        <div key={mod.key} className="mb-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm">{mod.icon}</span>
+                            <span className="text-xs font-medium text-foreground">{mod.name}</span>
+                            <span className="text-[10px] text-muted-foreground ml-auto">{modulePoints}分</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 ml-6">
+                            {mod.items.map((item) => {
+                              const completed = selectedDateLog.entries[item.id]?.completed;
+                              const notes = selectedDateLog.entries[item.id]?.notes;
+                              return (
+                                <div key={item.id} className={cn("text-[10px] px-2 py-0.5 rounded-full flex items-center gap-0.5", completed ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                                  {completed && <Check className="w-2.5 h-2.5" />}
+                                  {item.name}
+                                  {notes && <span className="text-muted-foreground/60 ml-0.5">📝</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bonus modules */}
+                  <div>
+                    <p className="text-[10px] text-primary uppercase tracking-wider mb-1.5">成长加分</p>
+                    {bonusModules.map((mod) => {
+                      const completedItems = mod.items.filter((item) => selectedDateLog.entries[item.id]?.completed);
+                      if (completedItems.length === 0) return null;
+                      const modulePoints = completedItems.reduce((s, item) => s + item.points, 0);
+                      return (
+                        <div key={mod.key} className="mb-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm">{mod.icon}</span>
+                            <span className="text-xs font-medium text-foreground">{mod.name}</span>
+                            <span className="text-[10px] text-muted-foreground ml-auto">+{modulePoints}分</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 ml-6">
+                            {completedItems.map((item) => (
+                              <div key={item.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary flex items-center gap-0.5">
+                                <Check className="w-2.5 h-2.5" />{item.name}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {bonusModules.every((mod) => mod.items.every((item) => !selectedDateLog.entries[item.id]?.completed)) && (
+                      <p className="text-[10px] text-muted-foreground ml-6">无加分项</p>
+                    )}
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <span className="text-xs font-medium text-foreground">当日总分</span>
+                    <span className="text-sm font-bold text-primary">{selectedDateLog.totalPoints}分</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-3 rounded-full"
+                onClick={() => navigate(`/stats/date/${format(selectedDate, "yyyy-MM-dd")}`)}
+              >
+                <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                修改记录
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">
         <h2 className="text-sm font-semibold text-foreground mb-3">本周积分</h2>
