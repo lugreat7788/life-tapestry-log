@@ -48,7 +48,7 @@ export default function GoalsPage() {
 
   // Add emotion form
   const [showAddEmotion, setShowAddEmotion] = useState(false);
-  const [newEmotionType, setNewEmotionType] = useState(DEFAULT_EMOTIONS[0]);
+  const [newEmotionType, setNewEmotionType] = useState(emotionTypes[0]);
   const [newIntensity, setNewIntensity] = useState(5);
   const [newTrigger, setNewTrigger] = useState("");
   const [newThoughts, setNewThoughts] = useState("");
