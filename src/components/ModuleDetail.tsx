@@ -441,6 +441,25 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                     onBlur={(e) => handleNotes(item.id, e.target.value)}
                     className="min-h-[120px] resize-none"
                   />
+                  {/* Upload buttons in drawer for daily_summary */}
+                  {item.id === "daily_summary" && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => { setActiveItemId(item.id); fileInputRef.current?.click(); }}
+                        disabled={uploading === item.id}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/50 rounded-lg px-3 py-2"
+                      >
+                        <Camera className="w-3.5 h-3.5" /> 上传图片
+                      </button>
+                      <button
+                        onClick={() => { setActiveItemId(item.id); generalFileInputRef.current?.click(); }}
+                        disabled={uploading === item.id}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/50 rounded-lg px-3 py-2"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" /> 上传文件
+                      </button>
+                    </div>
+                  )}
                   {photos.length > 0 && (
                     <div className="mt-4">
                       <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
@@ -458,6 +477,27 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                             </button>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                  {files.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> 已上传文件
+                      </p>
+                      <div className="space-y-1.5">
+                        {files.map((url, i) => {
+                          const fileName = decodeURIComponent(url.split("/").pop() || "文件");
+                          return (
+                            <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 group">
+                              <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate flex-1">{fileName}</a>
+                              <button onClick={() => handleRemoveFile(item.id, url)} className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
