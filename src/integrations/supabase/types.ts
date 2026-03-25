@@ -162,6 +162,7 @@ export type Database = {
           completed: boolean
           created_at: string
           daily_log_id: string
+          file_urls: string[] | null
           id: string
           item_id: string
           module_key: string
@@ -176,6 +177,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           daily_log_id: string
+          file_urls?: string[] | null
           id?: string
           item_id: string
           module_key: string
@@ -190,6 +192,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           daily_log_id?: string
+          file_urls?: string[] | null
           id?: string
           item_id?: string
           module_key?: string
