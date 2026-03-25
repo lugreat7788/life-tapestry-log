@@ -32,6 +32,8 @@ export default function SettingsPage() {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [editingModuleName, setEditingModuleName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [newEmotionType, setNewEmotionType] = useState("");
+  const [newRelationPerson, setNewRelationPerson] = useState("");
 
   useEffect(() => {
     if (!user) return;
