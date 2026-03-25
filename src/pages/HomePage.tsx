@@ -3,13 +3,14 @@ import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
-import { CORE_MODULES } from "@/lib/modules";
 import { getDailyLog, getStreakDays, getAllTimePoints } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
+import { useModuleConfig } from "@/hooks/useModuleConfig";
 import type { DailyLog } from "@/lib/store-types";
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { coreModules } = useModuleConfig();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
   const [streakDays, setStreakDays] = useState(0);
   const [allTimePoints, setAllTimePoints] = useState(0);
@@ -40,18 +41,11 @@ export default function HomePage() {
 
   const today = format(new Date(), "M月d日 EEEE", { locale: zhCN });
 
-  const calcPoints = (modules: typeof CORE_MODULES) =>
-    modules.reduce(
-      (sum, mod) =>
-        sum +
-        mod.items.reduce(
-          (s, item) => s + (log.entries[item.id]?.completed ? item.points : 0),
-          0
-        ),
-      0
-    );
-
-  const corePoints = calcPoints(CORE_MODULES);
+  const corePoints = coreModules.reduce(
+    (sum, mod) =>
+      sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
+    0
+  );
   const bonusPoints = 0;
 
   if (loading) {
@@ -80,11 +74,10 @@ export default function HomePage() {
         每日必修
       </h2>
       <div className="grid gap-2.5">
-        {CORE_MODULES.map((mod, i) => (
+        {coreModules.map((mod, i) => (
           <ModuleCard key={mod.key} module={mod} log={log} index={i} />
         ))}
       </div>
-
     </div>
   );
 }

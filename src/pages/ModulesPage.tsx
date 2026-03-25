@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BONUS_MODULES } from "@/lib/modules";
 import { getDailyLog } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
+import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
@@ -10,6 +10,7 @@ import type { DailyLog } from "@/lib/store-types";
 
 export default function ModulesPage() {
   const { user } = useAuth();
+  const { bonusModules } = useModuleConfig();
   const navigate = useNavigate();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
 
@@ -22,7 +23,7 @@ export default function ModulesPage() {
     <div className="px-4 pt-4 pb-4 max-w-lg mx-auto">
       <h1 className="text-lg font-display font-bold text-foreground mb-4">成长加分</h1>
       <div className="space-y-3">
-        {BONUS_MODULES.map((mod, i) => {
+        {bonusModules.map((mod, i) => {
           const earned = mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0);
           return (
             <motion.div

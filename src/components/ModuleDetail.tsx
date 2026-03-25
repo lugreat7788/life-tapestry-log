@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, MessageSquare, Camera, X, Image as ImageIcon } from "lucide-react";
-import { MODULES, getModuleMaxPoints } from "@/lib/modules";
+import { getModuleMaxPoints } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 import { getDailyLog, toggleEntry, updateEntryNotes } from "@/lib/supabase-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -26,8 +27,9 @@ interface ModuleDetailProps {
 const DIET_ITEM_IDS = ["diet_breakfast", "diet_lunch", "diet_dinner"];
 
 export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
-  const module = MODULES.find((m) => m.key === moduleKey)!;
   const { user } = useAuth();
+  const { getModule } = useModuleConfig();
+  const module = getModule(moduleKey)!;
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
   const [photoUrls, setPhotoUrls] = useState<Record<string, string[]>>({});
   const [uploading, setUploading] = useState<string | null>(null);
@@ -39,7 +41,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     const data = await getDailyLog(user.id, date);
     setLog(data);
 
-    // Load photos for entries
     if (data.id) {
       const { data: entries } = await supabase
         .from("log_entries")
@@ -56,6 +57,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   useEffect(() => {
     loadLog();
   }, [loadLog]);
+
+  if (!module) return null;
 
   const earnedPoints = module.items.reduce(
     (sum, item) => sum + (log.entries[item.id]?.completed ? item.points : 0),
@@ -86,10 +89,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
       const { data: urlData } = supabase.storage.from("entry-photos").getPublicUrl(path);
       const newUrl = urlData.publicUrl;
 
-      // Ensure log entry exists
       await updateEntryNotes(user.id, itemId, moduleKey, log.entries[itemId]?.notes || "");
       
-      // Update photo_urls in log_entries
       const currentUrls = photoUrls[itemId] || [];
       const updatedUrls = [...currentUrls, newUrl];
       
