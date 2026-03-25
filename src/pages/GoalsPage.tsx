@@ -21,6 +21,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 
 const DEFAULT_EMOTIONS = ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"];
+const DEFAULT_PERSONS = ["伴侣", "家人", "朋友", "同事"];
 
 const RELATION_STATUS_LABELS = { unresolved: "未解决", in_progress: "处理中", resolved: "已解决" };
 const RELATION_STATUS_COLORS = {
