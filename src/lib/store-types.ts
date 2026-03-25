@@ -4,6 +4,8 @@ export interface LogEntry {
   completed: boolean;
   notes: string;
   timestamp: string;
+  sleepBedtime?: string;
+  sleepWaketime?: string;
 }
 
 export interface DailyLog {
