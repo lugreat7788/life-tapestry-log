@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun } from "lucide-react";
+import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText } from "lucide-react";
 import { getModuleMaxPoints } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 import { getDailyLog, toggleEntry, updateEntryNotes, updateSleepTime } from "@/lib/supabase-store";
