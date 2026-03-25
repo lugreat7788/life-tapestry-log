@@ -242,6 +242,23 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
           e.target.value = "";
         }}
       />
+      <input
+        ref={generalFileInputRef}
+        type="file"
+        accept="image/*,.pdf,.doc,.docx,.txt,.md,.xls,.xlsx,.ppt,.pptx,.zip"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && activeItemId) {
+            if (file.type.startsWith("image/")) {
+              handlePhotoUpload(activeItemId, file);
+            } else {
+              handleFileUpload(activeItemId, file);
+            }
+          }
+          e.target.value = "";
+        }}
+      />
 
       <div className="space-y-3">
         {module.items.map((item) => {
