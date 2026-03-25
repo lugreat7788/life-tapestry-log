@@ -122,8 +122,10 @@ export default function StatsPage() {
   const LEVEL_COLORS = ["", "bg-primary/20", "bg-primary/40", "bg-primary/60", "bg-primary/90"];
 
   const handleDateClick = (day: Date) => {
-    navigate(`/stats/date/${format(day, "yyyy-MM-dd")}`);
+    setSelectedDate((prev) => prev && isSameDay(prev, day) ? null : day);
   };
+
+  const selectedDateLog = selectedDate ? allLogs[format(selectedDate, "yyyy-MM-dd")] : null;
 
   const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 
