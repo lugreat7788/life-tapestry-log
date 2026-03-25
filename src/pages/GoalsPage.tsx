@@ -162,7 +162,7 @@ export default function GoalsPage() {
                     <div>
                       <label className="text-xs text-muted-foreground mb-1.5 block">情绪类型</label>
                       <div className="flex flex-wrap gap-1.5">
-                        {DEFAULT_EMOTIONS.map((e) => (
+                        {emotionTypes.map((e) => (
                           <button
                             key={e}
                             onClick={() => setNewEmotionType(e)}
