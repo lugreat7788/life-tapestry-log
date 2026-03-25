@@ -42,15 +42,33 @@ export default function StatsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [radarMode, setRadarMode] = useState<"today" | "history">("today");
+  const [showCheckin, setShowCheckin] = useState(false);
+  const [emotionRecords, setEmotionRecords] = useState<EmotionRecord[]>([]);
+  const [relationshipRecords, setRelationshipRecords] = useState<RelationshipRecord[]>([]);
+  const [goals, setGoals] = useState<GoalItem[]>([]);
+  const [allTimePoints, setAllTimePoints] = useState(0);
   const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getAllLogs(user.id), getWeekPoints(user.id), getStreakDays(user.id), getSleepData(user.id)]).then(([logs, wp, s, sd]) => {
+    Promise.all([
+      getAllLogs(user.id),
+      getWeekPoints(user.id),
+      getStreakDays(user.id),
+      getSleepData(user.id),
+      getEmotionRecords(user.id),
+      getRelationshipRecords(user.id),
+      getGoals(user.id),
+      getAllTimePoints(user.id),
+    ]).then(([logs, wp, s, sd, er, rr, gl, atp]) => {
       setAllLogs(logs);
       setWeekPoints(wp);
       setStreak(s);
       setSleepData(sd);
+      setEmotionRecords(er);
+      setRelationshipRecords(rr);
+      setGoals(gl);
+      setAllTimePoints(atp);
       setLoading(false);
     });
   }, [user]);
