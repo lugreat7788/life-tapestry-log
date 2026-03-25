@@ -144,9 +144,10 @@ export default function StatsPage() {
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    const results: Array<{ date: string; itemName: string; moduleName: string; notes: string; photoUrls?: string[]; fileUrls?: string[] }> = [];
+    const results: Array<{ date: string; title: string; category: string; detail: string; onClick?: () => void }> = [];
     const allModules = [...coreModules, ...bonusModules];
     
+    // Search daily log entries
     Object.entries(allLogs).forEach(([date, log]: [string, any]) => {
       allModules.forEach((mod) => {
         mod.items.forEach((item) => {
@@ -158,18 +159,68 @@ export default function StatsPage() {
           if (matchName || matchNotes || matchModule) {
             results.push({
               date,
-              itemName: item.name,
-              moduleName: mod.name,
-              notes: entry.notes || "",
-              photoUrls: entry.photoUrls,
-              fileUrls: entry.fileUrls,
+              title: item.name,
+              category: mod.name,
+              detail: entry.notes || "",
+              onClick: () => { setSelectedDate(new Date(date)); setShowSearch(false); setSearchQuery(""); },
             });
           }
         });
       });
     });
+
+    // Search emotion records
+    emotionRecords.forEach((r) => {
+      const match = r.emotionType.toLowerCase().includes(q) ||
+        r.trigger.toLowerCase().includes(q) ||
+        r.thoughts.toLowerCase().includes(q) ||
+        r.copingStrategy.toLowerCase().includes(q) ||
+        "情绪".includes(q);
+      if (match) {
+        results.push({
+          date: r.date,
+          title: r.emotionType,
+          category: "情绪记录",
+          detail: [r.trigger, r.thoughts, r.copingStrategy].filter(Boolean).join(" · "),
+        });
+      }
+    });
+
+    // Search relationship records
+    relationshipRecords.forEach((r) => {
+      const match = r.person.toLowerCase().includes(q) ||
+        r.problem.toLowerCase().includes(q) ||
+        r.solution.toLowerCase().includes(q) ||
+        r.reflection.toLowerCase().includes(q) ||
+        "关系".includes(q) || "亲密".includes(q);
+      if (match) {
+        results.push({
+          date: r.date,
+          title: `${r.person} - ${r.problem.slice(0, 20)}`,
+          category: "关系记录",
+          detail: [r.solution, r.reflection].filter(Boolean).join(" · "),
+        });
+      }
+    });
+
+    // Search goals
+    goals.forEach((g) => {
+      const match = g.title.toLowerCase().includes(q) ||
+        g.description.toLowerCase().includes(q) ||
+        "目标".includes(q);
+      if (match) {
+        const statusMap: Record<string, string> = { not_started: "未开始", in_progress: "进行中", completed: "已完成" };
+        results.push({
+          date: g.createdAt.slice(0, 10),
+          title: g.title,
+          category: "目标追踪",
+          detail: `${statusMap[g.status] || g.status} · ${g.description}`,
+        });
+      }
+    });
+
     return results.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 50);
-  }, [searchQuery, allLogs, coreModules, bonusModules]);
+  }, [searchQuery, allLogs, coreModules, bonusModules, emotionRecords, relationshipRecords, goals]);
 
   const getCalendarCellData = (date: Date) => {
     const key = format(date, "yyyy-MM-dd");
