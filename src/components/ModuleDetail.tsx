@@ -265,6 +265,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
           const entry = log.entries[item.id];
           const isCompleted = entry?.completed;
           const photos = photoUrls[item.id] || [];
+          const files = fileUrls[item.id] || [];
 
           return (
             <Drawer key={item.id}>
