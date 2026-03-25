@@ -237,7 +237,14 @@ export default function GoalsPage() {
               {showAddRelation && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
                   <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
-                    <Input placeholder="对象（如：伴侣、家人、朋友）" value={newPerson} onChange={(e) => setNewPerson(e.target.value)} />
+                    <Select value={newPerson} onValueChange={setNewPerson}>
+                      <SelectTrigger><SelectValue placeholder="选择对象" /></SelectTrigger>
+                      <SelectContent>
+                        {personList.map((p) => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Textarea placeholder="遇到的问题..." value={newProblem} onChange={(e) => setNewProblem(e.target.value)} className="min-h-[80px] resize-none" />
                     <Textarea placeholder="解决方式（可稍后补充）" value={newSolution} onChange={(e) => setNewSolution(e.target.value)} className="min-h-[60px] resize-none" />
                     <Textarea placeholder="反思与收获（可稍后补充）" value={newReflection} onChange={(e) => setNewReflection(e.target.value)} className="min-h-[60px] resize-none" />
