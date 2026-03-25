@@ -6,9 +6,10 @@ import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
 import { getAllLogs, getWeekPoints, getStreakDays, getSleepData } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
-import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Image as ImageIcon } from "lucide-react";
+import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ResponsiveContainer,
@@ -36,6 +37,9 @@ export default function StatsPage() {
   const [sleepData, setSleepData] = useState<Array<{ date: string; bedtime: string; waketime: string; duration: number }>>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [radarMode, setRadarMode] = useState<"today" | "history">("today");
   const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
@@ -59,7 +63,8 @@ export default function StatsPage() {
 
   const totalAllTime = Object.values(allLogs).reduce((sum: number, log: any) => sum + log.totalPoints, 0);
 
-  const radarData = useMemo(() => {
+  // Today radar data
+  const todayRadarData = useMemo(() => {
     const todayLog = allLogs[format(new Date(), "yyyy-MM-dd")];
     if (!todayLog) return MODULES.map((m) => ({ module: m.name, value: 0 }));
     return MODULES.map((mod) => {
@@ -67,6 +72,21 @@ export default function StatsPage() {
       return { module: mod.name, value: Math.round((completed / mod.items.length) * 100) };
     });
   }, [allLogs]);
+
+  // History radar data (average across all logged days)
+  const historyRadarData = useMemo(() => {
+    const logEntries = Object.values(allLogs);
+    if (logEntries.length === 0) return MODULES.map((m) => ({ module: m.name, value: 0 }));
+    return MODULES.map((mod) => {
+      const totalPct = logEntries.reduce((sum: number, log: any) => {
+        const completed = mod.items.filter((item) => log.entries[item.id]?.completed).length;
+        return sum + (completed / mod.items.length) * 100;
+      }, 0);
+      return { module: mod.name, value: Math.round(totalPct / logEntries.length) };
+    });
+  }, [allLogs]);
+
+  const radarData = radarMode === "today" ? todayRadarData : historyRadarData;
 
   const sleepChartData = useMemo(() => {
     return sleepData.slice(-14).map((d) => ({
@@ -100,49 +120,58 @@ export default function StatsPage() {
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startDayOfWeek = monthStart.getDay();
 
-  const getScoreForDate = (date: Date) => {
-    const key = format(date, "yyyy-MM-dd");
-    const log = allLogs[key];
-    if (!log) return { core: 0, bonus: 0, total: 0 };
-    const core = CORE_MODULES.reduce((sum, mod) => sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0), 0);
-    const bonus = BONUS_MODULES.reduce((sum, mod) => sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0), 0);
-    return { core, bonus, total: log.totalPoints };
-  };
+  // Search results
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    const results: Array<{ date: string; itemName: string; moduleName: string; notes: string; photoUrls?: string[]; fileUrls?: string[] }> = [];
+    const allModules = [...coreModules, ...bonusModules];
+    
+    Object.entries(allLogs).forEach(([date, log]: [string, any]) => {
+      allModules.forEach((mod) => {
+        mod.items.forEach((item) => {
+          const entry = log.entries[item.id];
+          if (!entry) return;
+          const matchName = item.name.toLowerCase().includes(q);
+          const matchNotes = entry.notes?.toLowerCase().includes(q);
+          const matchModule = mod.name.toLowerCase().includes(q);
+          if (matchName || matchNotes || matchModule) {
+            results.push({
+              date,
+              itemName: item.name,
+              moduleName: mod.name,
+              notes: entry.notes || "",
+              photoUrls: entry.photoUrls,
+              fileUrls: entry.fileUrls,
+            });
+          }
+        });
+      });
+    });
+    return results.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 50);
+  }, [searchQuery, allLogs, coreModules, bonusModules]);
 
-  // Detailed breakdown for calendar cells
   const getCalendarCellData = (date: Date) => {
     const key = format(date, "yyyy-MM-dd");
     const log = allLogs[key];
     if (!log) return { dailyHealthPts: 0, learnOutputPts: 0, bonusPts: 0, hasExercise: false, total: 0 };
-
-    // daily_record + health → background
     const dailyHealthPts = ["daily_record", "health"].reduce((sum, modKey) => {
       const mod = CORE_MODULES.find((m) => m.key === modKey);
       if (!mod) return sum;
       return sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0);
     }, 0);
-
-    // learning + output → border
     const learnOutputPts = ["learning", "output"].reduce((sum, modKey) => {
       const mod = CORE_MODULES.find((m) => m.key === modKey);
       if (!mod) return sum;
       return sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0);
     }, 0);
-
-    // bonus modules → stars
     const bonusPts = BONUS_MODULES.reduce((sum, mod) => sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0), 0);
-
-    // exercise
     const hasExercise = !!log.entries["exercise_log"]?.completed;
-
     return { dailyHealthPts, learnOutputPts, bonusPts, hasExercise, total: log.totalPoints };
   };
 
-  // Max possible: daily_record(30) + health(30) = 60
   const getBgOpacity = (pts: number) => Math.min(pts / 50, 1);
-  // Max possible: learning(20) + output(20) = 40
   const getBorderOpacity = (pts: number) => Math.min(pts / 30, 1);
-  // Bonus stars: 1 star per 10 pts, max 3
   const getStarCount = (pts: number) => Math.min(Math.floor(pts / 10), 3);
 
   const handleDateClick = (day: Date) => {
@@ -159,7 +188,78 @@ export default function StatsPage() {
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <h1 className="text-2xl font-display font-bold text-foreground mb-5">统计</h1>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-2xl font-display font-bold text-foreground">统计</h1>
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Search className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden mb-4"
+          >
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="搜索历史记录..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 rounded-full"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Results */}
+            {searchQuery.trim() && (
+              <div className="mt-2 bg-card rounded-xl shadow-card p-3 max-h-80 overflow-y-auto space-y-2">
+                {searchResults.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">未找到匹配记录</p>
+                ) : (
+                  <>
+                    <p className="text-[10px] text-muted-foreground">{searchResults.length} 条结果</p>
+                    {searchResults.map((r, i) => (
+                      <div
+                        key={i}
+                        className="border border-border rounded-lg p-2.5 hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setSelectedDate(new Date(r.date));
+                          setShowSearch(false);
+                          setSearchQuery("");
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-muted-foreground">{format(new Date(r.date), "yyyy年M月d日")}</span>
+                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{r.moduleName}</span>
+                        </div>
+                        <p className="text-xs font-medium text-foreground">{r.itemName}</p>
+                        {r.notes && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.notes}</p>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-card rounded-xl shadow-card p-4 text-center">
@@ -178,54 +278,6 @@ export default function StatsPage() {
           <p className="text-[10px] text-muted-foreground">记录天数</p>
         </div>
       </div>
-
-      {/* Sleep Stats */}
-      {sleepData.length > 0 && (
-        <div className="bg-card rounded-xl shadow-card p-4 mb-6">
-          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Moon className="w-4 h-4 text-primary" />
-            睡眠统计
-          </h2>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-muted/50 rounded-lg p-3 text-center">
-              <Clock className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
-              <p className="text-lg font-display font-bold">{avgSleepDuration}h</p>
-              <p className="text-[10px] text-muted-foreground">平均睡眠时长</p>
-            </div>
-            <div className="bg-muted/50 rounded-lg p-3 text-center">
-              <Moon className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
-              <p className="text-lg font-display font-bold">{avgBedtime}</p>
-              <p className="text-[10px] text-muted-foreground">平均入睡时间</p>
-            </div>
-          </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sleepChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 12]} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} unit="h" />
-                <Tooltip
-                  contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", fontSize: 12 }}
-                  formatter={(value: number) => [`${value}小时`, "睡眠时长"]}
-                  labelFormatter={(label) => `日期: ${label}`}
-                />
-                <Line type="monotone" dataKey="duration" stroke="hsl(239, 84%, 67%)" strokeWidth={2} dot={{ r: 3, fill: "hsl(239, 84%, 67%)" }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
-            {sleepData.slice(0, 7).map((d) => (
-              <div key={d.date} className="flex items-center justify-between text-xs px-1">
-                <span className="text-muted-foreground">{format(new Date(d.date), "M月d日")}</span>
-                <span className="text-muted-foreground">{d.bedtime} → {d.waketime}</span>
-                <span className={cn("font-medium", d.duration >= 7 ? "text-primary" : d.duration >= 6 ? "text-foreground" : "text-destructive")}>
-                  {Math.floor(d.duration)}h{Math.round((d.duration % 1) * 60) > 0 ? `${Math.round((d.duration % 1) * 60)}m` : ""}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Calendar */}
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">
@@ -263,13 +315,11 @@ export default function StatsPage() {
                 }}
               >
                 <span className={cn("font-medium leading-none", isDark ? "text-white" : "text-foreground")}>{format(day, "d")}</span>
-                {/* Stars for bonus */}
                 {stars > 0 && (
                   <span className="text-[7px] leading-none mt-0.5">
                     {"✨".repeat(stars)}
                   </span>
                 )}
-                {/* Exercise icon */}
                 {cell.hasExercise && (
                   <span className="absolute bottom-0.5 right-0.5 text-[7px] leading-none">🏃</span>
                 )}
@@ -316,7 +366,6 @@ export default function StatsPage() {
                 <p className="text-xs text-muted-foreground py-4 text-center">当天无记录</p>
               ) : (
                 <div className="space-y-3">
-                  {/* Core modules */}
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">每日必修</p>
                     {coreModules.map((mod) => {
@@ -377,7 +426,6 @@ export default function StatsPage() {
                     })}
                   </div>
 
-                  {/* Bonus modules */}
                   <div>
                     <p className="text-[10px] text-primary uppercase tracking-wider mb-1.5">成长加分</p>
                     {bonusModules.map((mod) => {
@@ -415,7 +463,6 @@ export default function StatsPage() {
                     )}
                   </div>
 
-                  {/* Total */}
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <span className="text-xs font-medium text-foreground">当日总分</span>
                     <span className="text-sm font-bold text-primary">{selectedDateLog.totalPoints}分</span>
@@ -423,7 +470,6 @@ export default function StatsPage() {
                 </div>
               )}
 
-              {/* Edit button */}
               <Button
                 variant="outline"
                 size="sm"
@@ -437,6 +483,54 @@ export default function StatsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Sleep Stats — moved below calendar */}
+      {sleepData.length > 0 && (
+        <div className="bg-card rounded-xl shadow-card p-4 mb-6">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Moon className="w-4 h-4 text-primary" />
+            睡眠统计
+          </h2>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <Clock className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
+              <p className="text-lg font-display font-bold">{avgSleepDuration}h</p>
+              <p className="text-[10px] text-muted-foreground">平均睡眠时长</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <Moon className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
+              <p className="text-lg font-display font-bold">{avgBedtime}</p>
+              <p className="text-[10px] text-muted-foreground">平均入睡时间</p>
+            </div>
+          </div>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sleepChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 12]} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} unit="h" />
+                <Tooltip
+                  contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", fontSize: 12 }}
+                  formatter={(value: number) => [`${value}小时`, "睡眠时长"]}
+                  labelFormatter={(label) => `日期: ${label}`}
+                />
+                <Line type="monotone" dataKey="duration" stroke="hsl(239, 84%, 67%)" strokeWidth={2} dot={{ r: 3, fill: "hsl(239, 84%, 67%)" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
+            {sleepData.slice(0, 7).map((d) => (
+              <div key={d.date} className="flex items-center justify-between text-xs px-1">
+                <span className="text-muted-foreground">{format(new Date(d.date), "M月d日")}</span>
+                <span className="text-muted-foreground">{d.bedtime} → {d.waketime}</span>
+                <span className={cn("font-medium", d.duration >= 7 ? "text-primary" : d.duration >= 6 ? "text-foreground" : "text-destructive")}>
+                  {Math.floor(d.duration)}h{Math.round((d.duration % 1) * 60) > 0 ? `${Math.round((d.duration % 1) * 60)}m` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">
         <h2 className="text-sm font-semibold text-foreground mb-3">本周积分</h2>
@@ -452,8 +546,31 @@ export default function StatsPage() {
         </div>
       </div>
 
+      {/* Module Completion Radar — with today/history toggle */}
       <div className="bg-card rounded-xl shadow-card p-4">
-        <h2 className="text-sm font-semibold text-foreground mb-3">今日模块完成度</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground">模块完成度</h2>
+          <div className="flex bg-muted rounded-full p-0.5">
+            <button
+              onClick={() => setRadarMode("today")}
+              className={cn(
+                "text-[10px] px-3 py-1 rounded-full transition-colors font-medium",
+                radarMode === "today" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              )}
+            >
+              今日
+            </button>
+            <button
+              onClick={() => setRadarMode("history")}
+              className={cn(
+                "text-[10px] px-3 py-1 rounded-full transition-colors font-medium",
+                radarMode === "history" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              )}
+            >
+              历史均值
+            </button>
+          </div>
+        </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={radarData}>
