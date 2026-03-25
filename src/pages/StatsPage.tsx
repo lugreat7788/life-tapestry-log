@@ -322,22 +322,52 @@ export default function StatsPage() {
                     {coreModules.map((mod) => {
                       const completedItems = mod.items.filter((item) => selectedDateLog.entries[item.id]?.completed);
                       const modulePoints = completedItems.reduce((s, item) => s + item.points, 0);
+                      const hasAnyEntry = mod.items.some((item) => selectedDateLog.entries[item.id]);
+                      if (!hasAnyEntry && completedItems.length === 0) return null;
                       return (
-                        <div key={mod.key} className="mb-2">
+                        <div key={mod.key} className="mb-3">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm">{mod.icon}</span>
                             <span className="text-xs font-medium text-foreground">{mod.name}</span>
                             <span className="text-[10px] text-muted-foreground ml-auto">{modulePoints}分</span>
                           </div>
-                          <div className="flex flex-wrap gap-1 ml-6">
+                          <div className="ml-6 space-y-1.5">
                             {mod.items.map((item) => {
-                              const completed = selectedDateLog.entries[item.id]?.completed;
-                              const notes = selectedDateLog.entries[item.id]?.notes;
+                              const entry = selectedDateLog.entries[item.id];
+                              if (!entry) return null;
+                              const photos: string[] = entry.photoUrls || [];
+                              const files: string[] = entry.fileUrls || [];
                               return (
-                                <div key={item.id} className={cn("text-[10px] px-2 py-0.5 rounded-full flex items-center gap-0.5", completed ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
-                                  {completed && <Check className="w-2.5 h-2.5" />}
-                                  {item.name}
-                                  {notes && <span className="text-muted-foreground/60 ml-0.5">📝</span>}
+                                <div key={item.id} className="space-y-1">
+                                  <div className={cn("text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-0.5", entry.completed ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                                    {entry.completed && <Check className="w-2.5 h-2.5" />}
+                                    {item.name}
+                                  </div>
+                                  {entry.notes && (
+                                    <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 whitespace-pre-wrap">{entry.notes}</p>
+                                  )}
+                                  {photos.length > 0 && (
+                                    <div className="flex gap-1.5 flex-wrap">
+                                      {photos.map((url: string, i: number) => (
+                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg overflow-hidden border border-border">
+                                          <img src={url} alt="" className="w-full h-full object-cover" />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {files.length > 0 && (
+                                    <div className="flex flex-col gap-1">
+                                      {files.map((url: string, i: number) => {
+                                        const fileName = decodeURIComponent(url.split("/").pop() || "文件");
+                                        return (
+                                          <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[10px] text-primary hover:underline bg-primary/5 rounded-lg px-2 py-1.5">
+                                            <FileText className="w-3 h-3 shrink-0" />
+                                            <span className="truncate">{fileName}</span>
+                                          </a>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
@@ -351,22 +381,31 @@ export default function StatsPage() {
                   <div>
                     <p className="text-[10px] text-primary uppercase tracking-wider mb-1.5">成长加分</p>
                     {bonusModules.map((mod) => {
+                      const hasAnyEntry = mod.items.some((item) => selectedDateLog.entries[item.id]?.completed);
+                      if (!hasAnyEntry) return null;
                       const completedItems = mod.items.filter((item) => selectedDateLog.entries[item.id]?.completed);
-                      if (completedItems.length === 0) return null;
                       const modulePoints = completedItems.reduce((s, item) => s + item.points, 0);
                       return (
-                        <div key={mod.key} className="mb-2">
+                        <div key={mod.key} className="mb-3">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm">{mod.icon}</span>
                             <span className="text-xs font-medium text-foreground">{mod.name}</span>
                             <span className="text-[10px] text-muted-foreground ml-auto">+{modulePoints}分</span>
                           </div>
-                          <div className="flex flex-wrap gap-1 ml-6">
-                            {completedItems.map((item) => (
-                              <div key={item.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary flex items-center gap-0.5">
-                                <Check className="w-2.5 h-2.5" />{item.name}
-                              </div>
-                            ))}
+                          <div className="ml-6 space-y-1.5">
+                            {completedItems.map((item) => {
+                              const entry = selectedDateLog.entries[item.id];
+                              return (
+                                <div key={item.id} className="space-y-1">
+                                  <div className="text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-0.5 bg-primary/10 text-primary">
+                                    <Check className="w-2.5 h-2.5" />{item.name}
+                                  </div>
+                                  {entry?.notes && (
+                                    <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 whitespace-pre-wrap">{entry.notes}</p>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
