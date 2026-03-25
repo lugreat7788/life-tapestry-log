@@ -147,8 +147,73 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     await loadLog();
   };
 
+  const handleFileUpload = async (itemId: string, file: File) => {
+    if (!user) return;
+    setUploading(itemId);
+    try {
+      const ext = file.name.split(".").pop();
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${user.id}/${Date.now()}_${safeName}`;
+      const { error } = await supabase.storage.from("entry-photos").upload(path, file);
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage.from("entry-photos").getPublicUrl(path);
+      const newUrl = urlData.publicUrl;
+
+      await updateEntryNotes(user.id, itemId, moduleKey, log.entries[itemId]?.notes || "", date);
+
+      const currentUrls = fileUrls[itemId] || [];
+      const updatedUrls = [...currentUrls, newUrl];
+
+      const { data: logData } = await supabase
+        .from("daily_logs")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("date", log.date)
+        .maybeSingle();
+
+      if (logData) {
+        await supabase
+          .from("log_entries")
+          .update({ file_urls: updatedUrls } as any)
+          .eq("daily_log_id", logData.id)
+          .eq("item_id", itemId);
+      }
+
+      toast.success("文件上传成功");
+      await loadLog();
+    } catch {
+      toast.error("文件上传失败");
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleRemoveFile = async (itemId: string, urlToRemove: string) => {
+    if (!user) return;
+    const currentUrls = fileUrls[itemId] || [];
+    const updatedUrls = currentUrls.filter((u) => u !== urlToRemove);
+
+    const { data: logData } = await supabase
+      .from("daily_logs")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("date", log.date)
+      .maybeSingle();
+
+    if (logData) {
+      await supabase
+        .from("log_entries")
+        .update({ file_urls: updatedUrls } as any)
+        .eq("daily_log_id", logData.id)
+        .eq("item_id", itemId);
+    }
+    await loadLog();
+  };
+
   const isDietItem = (itemId: string) => DIET_ITEM_IDS.includes(itemId);
   const showPhotoButton = moduleKey === "health";
+  const showUploadButtons = (itemId: string) => itemId === "daily_summary" || showPhotoButton;
 
   return (
     <div className="px-4 pt-4 pb-6">
