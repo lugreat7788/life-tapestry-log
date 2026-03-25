@@ -3,14 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
-import { getAllLogs, getWeekPoints, getStreakDays, getSleepData } from "@/lib/supabase-store";
+import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
-import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search } from "lucide-react";
+import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
+import CheckinCard from "@/components/CheckinCard";
+import type { EmotionRecord, RelationshipRecord, GoalItem } from "@/lib/store-types";
 import {
   ResponsiveContainer,
   BarChart,
@@ -40,15 +42,33 @@ export default function StatsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [radarMode, setRadarMode] = useState<"today" | "history">("today");
+  const [showCheckin, setShowCheckin] = useState(false);
+  const [emotionRecords, setEmotionRecords] = useState<EmotionRecord[]>([]);
+  const [relationshipRecords, setRelationshipRecords] = useState<RelationshipRecord[]>([]);
+  const [goals, setGoals] = useState<GoalItem[]>([]);
+  const [allTimePoints, setAllTimePoints] = useState(0);
   const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getAllLogs(user.id), getWeekPoints(user.id), getStreakDays(user.id), getSleepData(user.id)]).then(([logs, wp, s, sd]) => {
+    Promise.all([
+      getAllLogs(user.id),
+      getWeekPoints(user.id),
+      getStreakDays(user.id),
+      getSleepData(user.id),
+      getEmotionRecords(user.id),
+      getRelationshipRecords(user.id),
+      getGoals(user.id),
+      getAllTimePoints(user.id),
+    ]).then(([logs, wp, s, sd, er, rr, gl, atp]) => {
       setAllLogs(logs);
       setWeekPoints(wp);
       setStreak(s);
       setSleepData(sd);
+      setEmotionRecords(er);
+      setRelationshipRecords(rr);
+      setGoals(gl);
+      setAllTimePoints(atp);
       setLoading(false);
     });
   }, [user]);
@@ -124,9 +144,10 @@ export default function StatsPage() {
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    const results: Array<{ date: string; itemName: string; moduleName: string; notes: string; photoUrls?: string[]; fileUrls?: string[] }> = [];
+    const results: Array<{ date: string; title: string; category: string; detail: string; onClick?: () => void }> = [];
     const allModules = [...coreModules, ...bonusModules];
     
+    // Search daily log entries
     Object.entries(allLogs).forEach(([date, log]: [string, any]) => {
       allModules.forEach((mod) => {
         mod.items.forEach((item) => {
@@ -138,18 +159,68 @@ export default function StatsPage() {
           if (matchName || matchNotes || matchModule) {
             results.push({
               date,
-              itemName: item.name,
-              moduleName: mod.name,
-              notes: entry.notes || "",
-              photoUrls: entry.photoUrls,
-              fileUrls: entry.fileUrls,
+              title: item.name,
+              category: mod.name,
+              detail: entry.notes || "",
+              onClick: () => { setSelectedDate(new Date(date)); setShowSearch(false); setSearchQuery(""); },
             });
           }
         });
       });
     });
+
+    // Search emotion records
+    emotionRecords.forEach((r) => {
+      const match = r.emotionType.toLowerCase().includes(q) ||
+        r.trigger.toLowerCase().includes(q) ||
+        r.thoughts.toLowerCase().includes(q) ||
+        r.copingStrategy.toLowerCase().includes(q) ||
+        "情绪".includes(q);
+      if (match) {
+        results.push({
+          date: r.date,
+          title: r.emotionType,
+          category: "情绪记录",
+          detail: [r.trigger, r.thoughts, r.copingStrategy].filter(Boolean).join(" · "),
+        });
+      }
+    });
+
+    // Search relationship records
+    relationshipRecords.forEach((r) => {
+      const match = r.person.toLowerCase().includes(q) ||
+        r.problem.toLowerCase().includes(q) ||
+        r.solution.toLowerCase().includes(q) ||
+        r.reflection.toLowerCase().includes(q) ||
+        "关系".includes(q) || "亲密".includes(q);
+      if (match) {
+        results.push({
+          date: r.date,
+          title: `${r.person} - ${r.problem.slice(0, 20)}`,
+          category: "关系记录",
+          detail: [r.solution, r.reflection].filter(Boolean).join(" · "),
+        });
+      }
+    });
+
+    // Search goals
+    goals.forEach((g) => {
+      const match = g.title.toLowerCase().includes(q) ||
+        g.description.toLowerCase().includes(q) ||
+        "目标".includes(q);
+      if (match) {
+        const statusMap: Record<string, string> = { not_started: "未开始", in_progress: "进行中", completed: "已完成" };
+        results.push({
+          date: g.createdAt.slice(0, 10),
+          title: g.title,
+          category: "目标追踪",
+          detail: `${statusMap[g.status] || g.status} · ${g.description}`,
+        });
+      }
+    });
+
     return results.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 50);
-  }, [searchQuery, allLogs, coreModules, bonusModules]);
+  }, [searchQuery, allLogs, coreModules, bonusModules, emotionRecords, relationshipRecords, goals]);
 
   const getCalendarCellData = (date: Date) => {
     const key = format(date, "yyyy-MM-dd");
@@ -190,12 +261,21 @@ export default function StatsPage() {
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-2xl font-display font-bold text-foreground">统计</h1>
-        <button
-          onClick={() => setShowSearch(!showSearch)}
-          className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Search className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowCheckin(true)}
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="打卡截图"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -238,18 +318,17 @@ export default function StatsPage() {
                         key={i}
                         className="border border-border rounded-lg p-2.5 hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => {
-                          setSelectedDate(new Date(r.date));
-                          setShowSearch(false);
-                          setSearchQuery("");
+                          if (r.onClick) r.onClick();
+                          else { setShowSearch(false); setSearchQuery(""); }
                         }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[10px] text-muted-foreground">{format(new Date(r.date), "yyyy年M月d日")}</span>
-                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{r.moduleName}</span>
+                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{r.category}</span>
                         </div>
-                        <p className="text-xs font-medium text-foreground">{r.itemName}</p>
-                        {r.notes && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.notes}</p>
+                        <p className="text-xs font-medium text-foreground">{r.title}</p>
+                        {r.detail && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.detail}</p>
                         )}
                       </div>
                     ))}
@@ -581,6 +660,20 @@ export default function StatsPage() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Checkin Screenshot Card */}
+      <AnimatePresence>
+        {showCheckin && (
+          <CheckinCard
+            log={allLogs[format(new Date(), "yyyy-MM-dd")] || { date: format(new Date(), "yyyy-MM-dd"), entries: {}, totalPoints: 0 }}
+            coreModules={coreModules}
+            bonusModules={bonusModules}
+            streakDays={streak}
+            allTimePoints={allTimePoints}
+            onClose={() => setShowCheckin(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
