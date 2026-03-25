@@ -48,13 +48,16 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     if (data.id) {
       const { data: entries } = await supabase
         .from("log_entries")
-        .select("item_id, photo_urls")
+        .select("item_id, photo_urls, file_urls" as any)
         .eq("daily_log_id", data.id);
       const urls: Record<string, string[]> = {};
+      const fUrls: Record<string, string[]> = {};
       (entries || []).forEach((e: any) => {
         if (e.photo_urls?.length) urls[e.item_id] = e.photo_urls;
+        if (e.file_urls?.length) fUrls[e.item_id] = e.file_urls;
       });
       setPhotoUrls(urls);
+      setFileUrls(fUrls);
     }
   }, [user, date]);
 
