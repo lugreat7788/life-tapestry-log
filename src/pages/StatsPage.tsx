@@ -35,7 +35,9 @@ export default function StatsPage() {
   const [allLogs, setAllLogs] = useState<Record<string, any>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [sleepData, setSleepData] = useState<Array<{ date: string; bedtime: string; waketime: string; duration: number }>>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
+  const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
     if (!user) return;
