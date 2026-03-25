@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
-import { getAllLogs, getWeekPoints, getStreakDays } from "@/lib/supabase-store";
+import { getAllLogs, getWeekPoints, getStreakDays, getSleepData } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
-import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight } from "lucide-react";
+import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ResponsiveContainer,
@@ -18,6 +18,9 @@ import {
   PolarGrid,
   PolarAngleAxis,
   Radar,
+  LineChart,
+  Line,
+  CartesianGrid,
 } from "recharts";
 
 export default function StatsPage() {
@@ -27,14 +30,16 @@ export default function StatsPage() {
   const [streak, setStreak] = useState(0);
   const [allLogs, setAllLogs] = useState<Record<string, any>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [sleepData, setSleepData] = useState<Array<{ date: string; bedtime: string; waketime: string; duration: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getAllLogs(user.id), getWeekPoints(user.id), getStreakDays(user.id)]).then(([logs, wp, s]) => {
+    Promise.all([getAllLogs(user.id), getWeekPoints(user.id), getStreakDays(user.id), getSleepData(user.id)]).then(([logs, wp, s, sd]) => {
       setAllLogs(logs);
       setWeekPoints(wp);
       setStreak(s);
+      setSleepData(sd);
       setLoading(false);
     });
   }, [user]);
@@ -57,6 +62,33 @@ export default function StatsPage() {
       return { module: mod.name, value: Math.round((completed / mod.items.length) * 100) };
     });
   }, [allLogs]);
+
+  const sleepChartData = useMemo(() => {
+    return sleepData.slice(-14).map((d) => ({
+      date: format(new Date(d.date), "M/d"),
+      duration: Math.round(d.duration * 10) / 10,
+      bedtime: d.bedtime,
+      waketime: d.waketime,
+    }));
+  }, [sleepData]);
+
+  const avgSleepDuration = sleepData.length > 0
+    ? Math.round((sleepData.reduce((s, d) => s + d.duration, 0) / sleepData.length) * 10) / 10
+    : 0;
+
+  const avgBedtime = useMemo(() => {
+    if (sleepData.length === 0) return "--:--";
+    const totalMin = sleepData.reduce((s, d) => {
+      const [h, m] = d.bedtime.split(":").map(Number);
+      let mins = h * 60 + m;
+      if (mins < 12 * 60) mins += 24 * 60;
+      return s + mins;
+    }, 0);
+    let avg = Math.round(totalMin / sleepData.length) % (24 * 60);
+    const hh = Math.floor(avg / 60) % 24;
+    const mm = avg % 60;
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  }, [sleepData]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -115,6 +147,54 @@ export default function StatsPage() {
         </div>
       </div>
 
+      {/* Sleep Stats */}
+      {sleepData.length > 0 && (
+        <div className="bg-card rounded-xl shadow-card p-4 mb-6">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Moon className="w-4 h-4 text-primary" />
+            睡眠统计
+          </h2>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <Clock className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
+              <p className="text-lg font-display font-bold">{avgSleepDuration}h</p>
+              <p className="text-[10px] text-muted-foreground">平均睡眠时长</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <Moon className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
+              <p className="text-lg font-display font-bold">{avgBedtime}</p>
+              <p className="text-[10px] text-muted-foreground">平均入睡时间</p>
+            </div>
+          </div>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sleepChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 12]} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} unit="h" />
+                <Tooltip
+                  contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", fontSize: 12 }}
+                  formatter={(value: number) => [`${value}小时`, "睡眠时长"]}
+                  labelFormatter={(label) => `日期: ${label}`}
+                />
+                <Line type="monotone" dataKey="duration" stroke="hsl(239, 84%, 67%)" strokeWidth={2} dot={{ r: 3, fill: "hsl(239, 84%, 67%)" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
+            {sleepData.slice(0, 7).map((d) => (
+              <div key={d.date} className="flex items-center justify-between text-xs px-1">
+                <span className="text-muted-foreground">{format(new Date(d.date), "M月d日")}</span>
+                <span className="text-muted-foreground">{d.bedtime} → {d.waketime}</span>
+                <span className={cn("font-medium", d.duration >= 7 ? "text-primary" : d.duration >= 6 ? "text-foreground" : "text-destructive")}>
+                  {Math.floor(d.duration)}h{Math.round((d.duration % 1) * 60) > 0 ? `${Math.round((d.duration % 1) * 60)}m` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Calendar */}
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -172,7 +252,6 @@ export default function StatsPage() {
           </ResponsiveContainer>
         </div>
       </div>
-
     </div>
   );
 }

@@ -26,13 +26,15 @@ export async function getDailyLog(userId: string, date?: Date) {
     .eq("daily_log_id", log.id);
 
   const entriesMap: Record<string, any> = {};
-  (entries || []).forEach((e) => {
+  (entries || []).forEach((e: any) => {
     entriesMap[e.item_id] = {
       itemId: e.item_id,
       moduleKey: e.module_key,
       completed: e.completed,
       notes: e.notes || "",
       timestamp: e.created_at,
+      sleepBedtime: e.sleep_bedtime || "",
+      sleepWaketime: e.sleep_waketime || "",
     };
   });
 
@@ -180,6 +182,8 @@ export async function getAllLogs(userId: string) {
         completed: e.completed,
         notes: e.notes || "",
         timestamp: e.created_at,
+        sleepBedtime: e.sleep_bedtime || "",
+        sleepWaketime: e.sleep_waketime || "",
       };
     });
     result[log.date] = { date: log.date, entries: entriesMap, totalPoints: log.total_points };
@@ -499,4 +503,102 @@ export async function updateRelationshipRecord(id: string, updates: Partial<Rela
 
 export async function deleteRelationshipRecord(id: string) {
   await supabase.from("relationship_records").delete().eq("id", id);
+}
+
+// ─── Sleep Time ───
+
+export async function updateSleepTime(
+  userId: string,
+  bedtime: string,
+  waketime: string,
+  date?: Date
+) {
+  const dateStr = format(date || new Date(), "yyyy-MM-dd");
+
+  let { data: log } = await supabase
+    .from("daily_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("date", dateStr)
+    .maybeSingle();
+
+  if (!log) {
+    const { data: newLog } = await supabase
+      .from("daily_logs")
+      .insert({ user_id: userId, date: dateStr, total_points: 0 })
+      .select()
+      .single();
+    log = newLog;
+  }
+  if (!log) return;
+
+  const { data: existing } = await supabase
+    .from("log_entries")
+    .select("*")
+    .eq("daily_log_id", log.id)
+    .eq("item_id", "sleep_log")
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("log_entries")
+      .update({ sleep_bedtime: bedtime, sleep_waketime: waketime } as any)
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("log_entries").insert({
+      user_id: userId,
+      daily_log_id: log.id,
+      item_id: "sleep_log",
+      module_key: "health",
+      completed: false,
+      notes: "",
+      sleep_bedtime: bedtime,
+      sleep_waketime: waketime,
+    } as any);
+  }
+}
+
+export async function getSleepData(userId: string): Promise<Array<{ date: string; bedtime: string; waketime: string; duration: number }>> {
+  const { data: logs } = await supabase
+    .from("daily_logs")
+    .select("date, id")
+    .eq("user_id", userId)
+    .order("date", { ascending: false })
+    .limit(30);
+
+  if (!logs?.length) return [];
+
+  const logIds = logs.map((l) => l.id);
+  const { data: entries } = await supabase
+    .from("log_entries")
+    .select("daily_log_id, sleep_bedtime, sleep_waketime" as any)
+    .eq("item_id", "sleep_log")
+    .in("daily_log_id", logIds);
+
+  const logDateMap: Record<string, string> = {};
+  logs.forEach((l) => { logDateMap[l.id] = l.date; });
+
+  const result: Array<{ date: string; bedtime: string; waketime: string; duration: number }> = [];
+  (entries || []).forEach((e: any) => {
+    if (e.sleep_bedtime && e.sleep_waketime) {
+      const duration = calcSleepDuration(e.sleep_bedtime, e.sleep_waketime);
+      result.push({
+        date: logDateMap[e.daily_log_id],
+        bedtime: e.sleep_bedtime,
+        waketime: e.sleep_waketime,
+        duration,
+      });
+    }
+  });
+
+  return result.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function calcSleepDuration(bedtime: string, waketime: string): number {
+  const [bh, bm] = bedtime.split(":").map(Number);
+  const [wh, wm] = waketime.split(":").map(Number);
+  let bedMinutes = bh * 60 + bm;
+  let wakeMinutes = wh * 60 + wm;
+  if (wakeMinutes <= bedMinutes) wakeMinutes += 24 * 60;
+  return (wakeMinutes - bedMinutes) / 60;
 }

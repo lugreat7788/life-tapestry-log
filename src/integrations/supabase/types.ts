@@ -129,6 +129,8 @@ export type Database = {
           module_key: string
           notes: string | null
           photo_urls: string[] | null
+          sleep_bedtime: string | null
+          sleep_waketime: string | null
           updated_at: string
           user_id: string
         }
@@ -141,6 +143,8 @@ export type Database = {
           module_key: string
           notes?: string | null
           photo_urls?: string[] | null
+          sleep_bedtime?: string | null
+          sleep_waketime?: string | null
           updated_at?: string
           user_id: string
         }
@@ -153,6 +157,8 @@ export type Database = {
           module_key?: string
           notes?: string | null
           photo_urls?: string[] | null
+          sleep_bedtime?: string | null
+          sleep_waketime?: string | null
           updated_at?: string
           user_id?: string
         }
