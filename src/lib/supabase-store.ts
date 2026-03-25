@@ -604,3 +604,94 @@ function calcSleepDuration(bedtime: string, waketime: string): number {
   if (wakeMinutes <= bedMinutes) wakeMinutes += 24 * 60;
   return (wakeMinutes - bedMinutes) / 60;
 }
+
+// ─── Goal Collections ───
+
+export async function getGoalCollections(userId: string): Promise<GoalCollection[]> {
+  const { data } = await supabase
+    .from("goal_collections")
+    .select("*")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true });
+
+  return (data || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    sortOrder: c.sort_order,
+    createdAt: c.created_at,
+  }));
+}
+
+export async function addGoalCollection(userId: string, name: string) {
+  const { data: existing } = await supabase
+    .from("goal_collections")
+    .select("sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? (existing[0] as any).sort_order + 1 : 0;
+  await supabase.from("goal_collections").insert({ user_id: userId, name, sort_order: nextOrder } as any);
+}
+
+export async function renameGoalCollection(id: string, name: string) {
+  await supabase.from("goal_collections").update({ name } as any).eq("id", id);
+}
+
+export async function deleteGoalCollection(id: string) {
+  await supabase.from("goal_collections").delete().eq("id", id);
+}
+
+// ─── Rewards ───
+
+export async function getRewards(userId: string): Promise<RewardItem[]> {
+  const { data } = await supabase
+    .from("rewards")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    pointsCost: r.points_cost,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addReward(userId: string, name: string, pointsCost: number) {
+  await supabase.from("rewards").insert({ user_id: userId, name, points_cost: pointsCost } as any);
+}
+
+export async function deleteReward(id: string) {
+  await supabase.from("rewards").delete().eq("id", id);
+}
+
+// ─── Redemptions ───
+
+export async function getRedemptions(userId: string): Promise<RedemptionRecord[]> {
+  const { data } = await supabase
+    .from("redemptions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("redeemed_at", { ascending: false });
+
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    rewardName: r.reward_name,
+    pointsSpent: r.points_spent,
+    redeemedAt: r.redeemed_at,
+  }));
+}
+
+export async function addRedemption(userId: string, rewardName: string, pointsSpent: number) {
+  await supabase.from("redemptions").insert({ user_id: userId, reward_name: rewardName, points_spent: pointsSpent } as any);
+}
+
+export async function getTotalSpentPoints(userId: string): Promise<number> {
+  const { data } = await supabase
+    .from("redemptions")
+    .select("points_spent")
+    .eq("user_id", userId);
+  return (data || []).reduce((sum, r: any) => sum + (r.points_spent || 0), 0);
+}
