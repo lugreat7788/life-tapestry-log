@@ -261,12 +261,21 @@ export default function StatsPage() {
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-2xl font-display font-bold text-foreground">统计</h1>
-        <button
-          onClick={() => setShowSearch(!showSearch)}
-          className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Search className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowCheckin(true)}
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="打卡截图"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}
