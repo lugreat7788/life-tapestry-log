@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, LayoutGrid, Target, BarChart3, Settings } from "lucide-react";
+import { Home, LayoutGrid, Heart, BarChart3, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
