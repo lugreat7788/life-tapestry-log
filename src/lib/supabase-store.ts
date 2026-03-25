@@ -288,7 +288,7 @@ export async function getGoals(userId: string): Promise<GoalItem[]> {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  return (data || []).map((g) => ({
+  return (data || []).map((g: any) => ({
     id: g.id,
     title: g.title,
     description: g.description || "",
@@ -296,6 +296,7 @@ export async function getGoals(userId: string): Promise<GoalItem[]> {
     type: g.type as "short_term" | "long_term",
     status: g.status as "not_started" | "in_progress" | "completed",
     points: g.points,
+    collectionId: g.collection_id || undefined,
     createdAt: g.created_at,
   }));
 }
@@ -309,7 +310,8 @@ export async function addGoal(userId: string, goal: Omit<GoalItem, "id" | "creat
     type: goal.type,
     status: goal.status,
     points: goal.points,
-  });
+    collection_id: goal.collectionId || null,
+  } as any);
 }
 
 export async function updateGoalStatus(id: string, status: string) {
