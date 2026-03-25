@@ -307,21 +307,35 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                     +{item.points}分
                   </span>
 
-                  {showPhotoButton && (
-                    <button
-                      onClick={() => {
-                        setActiveItemId(item.id);
-                        fileInputRef.current?.click();
-                      }}
-                      disabled={uploading === item.id}
-                      className="text-muted-foreground hover:text-foreground p-1"
-                    >
-                      {uploading === item.id ? (
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Camera className="w-4 h-4" />
+                  {showUploadButtons(item.id) && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setActiveItemId(item.id);
+                          fileInputRef.current?.click();
+                        }}
+                        disabled={uploading === item.id}
+                        className="text-muted-foreground hover:text-foreground p-1"
+                      >
+                        {uploading === item.id ? (
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Camera className="w-4 h-4" />
+                        )}
+                      </button>
+                      {item.id === "daily_summary" && (
+                        <button
+                          onClick={() => {
+                            setActiveItemId(item.id);
+                            generalFileInputRef.current?.click();
+                          }}
+                          disabled={uploading === item.id}
+                          className="text-muted-foreground hover:text-foreground p-1"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                        </button>
                       )}
-                    </button>
+                    </>
                   )}
 
                   <DrawerTrigger asChild>
