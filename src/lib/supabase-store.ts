@@ -26,13 +26,15 @@ export async function getDailyLog(userId: string, date?: Date) {
     .eq("daily_log_id", log.id);
 
   const entriesMap: Record<string, any> = {};
-  (entries || []).forEach((e) => {
+  (entries || []).forEach((e: any) => {
     entriesMap[e.item_id] = {
       itemId: e.item_id,
       moduleKey: e.module_key,
       completed: e.completed,
       notes: e.notes || "",
       timestamp: e.created_at,
+      sleepBedtime: e.sleep_bedtime || "",
+      sleepWaketime: e.sleep_waketime || "",
     };
   });
 
