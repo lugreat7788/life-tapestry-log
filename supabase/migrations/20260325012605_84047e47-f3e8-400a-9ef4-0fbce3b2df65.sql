@@ -1,0 +1,1 @@
+ALTER TABLE public.log_entries ADD COLUMN file_urls TEXT[] DEFAULT '{}'::text[];
