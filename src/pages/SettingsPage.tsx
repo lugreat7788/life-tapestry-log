@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints } from "@/lib/modules";
 import type { Module } from "@/lib/modules";
-import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals } from "@/lib/supabase-store";
+import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords } from "@/lib/supabase-store";
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
