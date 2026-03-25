@@ -6,7 +6,7 @@ import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
 import { getAllLogs, getWeekPoints, getStreakDays, getSleepData } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
-import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2 } from "lucide-react";
+import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
