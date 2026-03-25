@@ -35,7 +35,29 @@ export interface GoalItem {
   type: "short_term" | "long_term";
   status: "not_started" | "in_progress" | "completed";
   points: number;
+  collectionId?: string;
   createdAt: string;
+}
+
+export interface GoalCollection {
+  id: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface RewardItem {
+  id: string;
+  name: string;
+  pointsCost: number;
+  createdAt: string;
+}
+
+export interface RedemptionRecord {
+  id: string;
+  rewardName: string;
+  pointsSpent: number;
+  redeemedAt: string;
 }
 
 export interface TodoCollection {

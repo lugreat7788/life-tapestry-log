@@ -80,8 +80,36 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_collections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
+          collection_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -94,6 +122,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          collection_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -106,6 +135,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          collection_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -117,7 +147,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "goals_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "goal_collections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       log_entries: {
         Row: {
@@ -223,6 +261,30 @@ export type Database = {
         }
         Relationships: []
       }
+      redemptions: {
+        Row: {
+          id: string
+          points_spent: number
+          redeemed_at: string
+          reward_name: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          points_spent: number
+          redeemed_at?: string
+          reward_name: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          points_spent?: number
+          redeemed_at?: string
+          reward_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       relationship_records: {
         Row: {
           created_at: string
@@ -257,6 +319,33 @@ export type Database = {
           reflection?: string | null
           solution?: string | null
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rewards: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          points_cost: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          points_cost?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          points_cost?: number
           updated_at?: string
           user_id?: string
         }
