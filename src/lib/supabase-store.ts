@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import type { GoalItem, TodoItem, ModuleConfig, TodoCollection, EmotionRecord, RelationshipRecord } from "./store-types";
+import type { GoalItem, TodoItem, ModuleConfig, TodoCollection, EmotionRecord, RelationshipRecord, GoalCollection, RewardItem, RedemptionRecord } from "./store-types";
 
-export type { LogEntry, DailyLog, TodoItem, GoalItem, ModuleConfig, TodoCollection, EmotionRecord, RelationshipRecord } from "./store-types";
+export type { LogEntry, DailyLog, TodoItem, GoalItem, ModuleConfig, TodoCollection, EmotionRecord, RelationshipRecord, GoalCollection, RewardItem, RedemptionRecord } from "./store-types";
 
 // ─── Daily Logs ───
 
