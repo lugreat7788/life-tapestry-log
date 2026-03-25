@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Target, Calendar, Heart, Brain, Check, ChevronDown, MessageSquare } from "lucide-react";
+import { Plus, Trash2, Target, Calendar, Heart, Brain } from "lucide-react";
 import { getEmotionRecords, addEmotionRecord, deleteEmotionRecord, updateEmotionRecord, getRelationshipRecords, addRelationshipRecord, deleteRelationshipRecord, updateRelationshipRecord, getGoals, addGoal as addGoalDb, updateGoalStatus, deleteGoal as deleteGoalDb } from "@/lib/supabase-store";
 import type { EmotionRecord, RelationshipRecord, GoalItem } from "@/lib/store-types";
+import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
