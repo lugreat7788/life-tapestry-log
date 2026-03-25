@@ -109,16 +109,41 @@ export default function StatsPage() {
     return { core, bonus, total: log.totalPoints };
   };
 
-  const getCompletionLevel = (date: Date): number => {
-    const { core } = getScoreForDate(date);
-    if (core === 0) return 0;
-    if (core < 30) return 1;
-    if (core < 60) return 2;
-    if (core < 100) return 3;
-    return 4;
+  // Detailed breakdown for calendar cells
+  const getCalendarCellData = (date: Date) => {
+    const key = format(date, "yyyy-MM-dd");
+    const log = allLogs[key];
+    if (!log) return { dailyHealthPts: 0, learnOutputPts: 0, bonusPts: 0, hasExercise: false, total: 0 };
+
+    // daily_record + health → background
+    const dailyHealthPts = ["daily_record", "health"].reduce((sum, modKey) => {
+      const mod = CORE_MODULES.find((m) => m.key === modKey);
+      if (!mod) return sum;
+      return sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0);
+    }, 0);
+
+    // learning + output → border
+    const learnOutputPts = ["learning", "output"].reduce((sum, modKey) => {
+      const mod = CORE_MODULES.find((m) => m.key === modKey);
+      if (!mod) return sum;
+      return sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0);
+    }, 0);
+
+    // bonus modules → stars
+    const bonusPts = BONUS_MODULES.reduce((sum, mod) => sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0), 0);
+
+    // exercise
+    const hasExercise = !!log.entries["exercise_log"]?.completed;
+
+    return { dailyHealthPts, learnOutputPts, bonusPts, hasExercise, total: log.totalPoints };
   };
 
-  const LEVEL_COLORS = ["", "bg-primary/20", "bg-primary/40", "bg-primary/60", "bg-primary/90"];
+  // Max possible: daily_record(30) + health(30) = 60
+  const getBgOpacity = (pts: number) => Math.min(pts / 50, 1);
+  // Max possible: learning(20) + output(20) = 40
+  const getBorderOpacity = (pts: number) => Math.min(pts / 30, 1);
+  // Bonus stars: 1 star per 10 pts, max 3
+  const getStarCount = (pts: number) => Math.min(Math.floor(pts / 10), 3);
 
   const handleDateClick = (day: Date) => {
     setSelectedDate((prev) => prev && isSameDay(prev, day) ? null : day);
