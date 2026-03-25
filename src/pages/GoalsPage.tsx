@@ -39,6 +39,9 @@ const STATUS_COLORS = {
 
 export default function GoalsPage() {
   const { user } = useAuth();
+  const { config } = useModuleConfig();
+  const emotionTypes = config?.emotionTypes || DEFAULT_EMOTIONS;
+  const personList = config?.relationshipPersons || DEFAULT_PERSONS;
   const [emotions, setEmotions] = useState<EmotionRecord[]>([]);
   const [relationships, setRelationships] = useState<RelationshipRecord[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
