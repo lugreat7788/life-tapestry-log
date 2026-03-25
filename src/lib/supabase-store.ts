@@ -402,3 +402,101 @@ export async function renameTodoCollection(id: string, name: string) {
 export async function deleteTodoCollection(id: string) {
   await supabase.from("todo_collections").delete().eq("id", id);
 }
+
+// ─── Emotion Records ───
+
+export async function getEmotionRecords(userId: string): Promise<EmotionRecord[]> {
+  const { data } = await supabase
+    .from("emotion_records")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    userId: r.user_id,
+    date: r.date,
+    emotionType: r.emotion_type,
+    intensity: r.intensity,
+    trigger: r.trigger || "",
+    thoughts: r.thoughts || "",
+    copingStrategy: r.coping_strategy || "",
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addEmotionRecord(userId: string, record: Omit<EmotionRecord, "id" | "userId" | "createdAt">) {
+  await supabase.from("emotion_records").insert({
+    user_id: userId,
+    date: record.date,
+    emotion_type: record.emotionType,
+    intensity: record.intensity,
+    trigger: record.trigger || null,
+    thoughts: record.thoughts || null,
+    coping_strategy: record.copingStrategy || null,
+  } as any);
+}
+
+export async function updateEmotionRecord(id: string, updates: Partial<EmotionRecord>) {
+  const mapped: any = {};
+  if (updates.emotionType !== undefined) mapped.emotion_type = updates.emotionType;
+  if (updates.intensity !== undefined) mapped.intensity = updates.intensity;
+  if (updates.trigger !== undefined) mapped.trigger = updates.trigger;
+  if (updates.thoughts !== undefined) mapped.thoughts = updates.thoughts;
+  if (updates.copingStrategy !== undefined) mapped.coping_strategy = updates.copingStrategy;
+  await supabase.from("emotion_records").update(mapped).eq("id", id);
+}
+
+export async function deleteEmotionRecord(id: string) {
+  await supabase.from("emotion_records").delete().eq("id", id);
+}
+
+// ─── Relationship Records ───
+
+export async function getRelationshipRecords(userId: string): Promise<RelationshipRecord[]> {
+  const { data } = await supabase
+    .from("relationship_records")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    userId: r.user_id,
+    date: r.date,
+    person: r.person,
+    problem: r.problem,
+    solution: r.solution || "",
+    reflection: r.reflection || "",
+    status: r.status as any,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addRelationshipRecord(userId: string, record: Omit<RelationshipRecord, "id" | "userId" | "createdAt">) {
+  await supabase.from("relationship_records").insert({
+    user_id: userId,
+    date: record.date,
+    person: record.person,
+    problem: record.problem,
+    solution: record.solution || null,
+    reflection: record.reflection || null,
+    status: record.status,
+  } as any);
+}
+
+export async function updateRelationshipRecord(id: string, updates: Partial<RelationshipRecord>) {
+  const mapped: any = {};
+  if (updates.person !== undefined) mapped.person = updates.person;
+  if (updates.problem !== undefined) mapped.problem = updates.problem;
+  if (updates.solution !== undefined) mapped.solution = updates.solution;
+  if (updates.reflection !== undefined) mapped.reflection = updates.reflection;
+  if (updates.status !== undefined) mapped.status = updates.status;
+  await supabase.from("relationship_records").update(mapped).eq("id", id);
+}
+
+export async function deleteRelationshipRecord(id: string) {
+  await supabase.from("relationship_records").delete().eq("id", id);
+}
