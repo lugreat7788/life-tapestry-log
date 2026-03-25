@@ -182,6 +182,8 @@ export async function getAllLogs(userId: string) {
         completed: e.completed,
         notes: e.notes || "",
         timestamp: e.created_at,
+        sleepBedtime: e.sleep_bedtime || "",
+        sleepWaketime: e.sleep_waketime || "",
       };
     });
     result[log.date] = { date: log.date, entries: entriesMap, totalPoints: log.total_points };
