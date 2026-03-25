@@ -660,6 +660,20 @@ export default function StatsPage() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Checkin Screenshot Card */}
+      <AnimatePresence>
+        {showCheckin && (
+          <CheckinCard
+            log={allLogs[format(new Date(), "yyyy-MM-dd")] || { date: format(new Date(), "yyyy-MM-dd"), entries: {}, totalPoints: 0 }}
+            coreModules={coreModules}
+            bonusModules={bonusModules}
+            streakDays={streak}
+            allTimePoints={allTimePoints}
+            onClose={() => setShowCheckin(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
