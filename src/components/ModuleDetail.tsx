@@ -267,8 +267,53 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   </DrawerTitle>
                 </DrawerHeader>
                 <div className="px-4 pb-8">
+                  {item.id === "sleep_log" && (
+                    <div className="mb-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Moon className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <label className="text-sm text-muted-foreground w-16 shrink-0">入睡</label>
+                        <Input
+                          type="time"
+                          defaultValue={entry?.sleepBedtime || ""}
+                          onBlur={async (e) => {
+                            if (!user) return;
+                            await updateSleepTime(user.id, e.target.value, entry?.sleepWaketime || "", date);
+                            await loadLog();
+                          }}
+                          className="flex-1"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Sun className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <label className="text-sm text-muted-foreground w-16 shrink-0">起床</label>
+                        <Input
+                          type="time"
+                          defaultValue={entry?.sleepWaketime || ""}
+                          onBlur={async (e) => {
+                            if (!user) return;
+                            await updateSleepTime(user.id, entry?.sleepBedtime || "", e.target.value, date);
+                            await loadLog();
+                          }}
+                          className="flex-1"
+                        />
+                      </div>
+                      {entry?.sleepBedtime && entry?.sleepWaketime && (
+                        <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+                          睡眠时长约 {(() => {
+                            const [bh, bm] = entry.sleepBedtime.split(":").map(Number);
+                            const [wh, wm] = entry.sleepWaketime.split(":").map(Number);
+                            let bed = bh * 60 + bm, wake = wh * 60 + wm;
+                            if (wake <= bed) wake += 24 * 60;
+                            const h = Math.floor((wake - bed) / 60);
+                            const m = (wake - bed) % 60;
+                            return `${h}小时${m > 0 ? m + "分钟" : ""}`;
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <Textarea
-                    placeholder={isDietItem(item.id) ? "记录饮食内容、热量等..." : item.id === "body_status" ? "记录今日身体状况、体重、症状等..." : "记录你的心得、感想..."}
+                    placeholder={isDietItem(item.id) ? "记录饮食内容、热量等..." : item.id === "body_status" ? "记录今日身体状况、体重、症状等..." : item.id === "sleep_log" ? "记录睡眠质量、梦境等..." : "记录你的心得、感想..."}
                     defaultValue={entry?.notes || ""}
                     onBlur={(e) => handleNotes(item.id, e.target.value)}
                     className="min-h-[120px] resize-none"
