@@ -41,6 +41,45 @@ export type Database = {
         }
         Relationships: []
       }
+      emotion_records: {
+        Row: {
+          coping_strategy: string | null
+          created_at: string
+          date: string
+          emotion_type: string
+          id: string
+          intensity: number
+          thoughts: string | null
+          trigger: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coping_strategy?: string | null
+          created_at?: string
+          date?: string
+          emotion_type?: string
+          id?: string
+          intensity?: number
+          thoughts?: string | null
+          trigger?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coping_strategy?: string | null
+          created_at?: string
+          date?: string
+          emotion_type?: string
+          id?: string
+          intensity?: number
+          thoughts?: string | null
+          trigger?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
@@ -173,6 +212,45 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      relationship_records: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          person: string
+          problem: string
+          reflection: string | null
+          solution: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          person?: string
+          problem?: string
+          reflection?: string | null
+          solution?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          person?: string
+          problem?: string
+          reflection?: string | null
+          solution?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }

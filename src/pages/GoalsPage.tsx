@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Trash2, Target, Calendar, Flag, FolderPlus, Pencil, X, Folder } from "lucide-react";
-import { getTodos, addTodo as addTodoDb, updateTodo, deleteTodo as deleteTodoDb, getGoals, addGoal as addGoalDb, updateGoalStatus, deleteGoal as deleteGoalDb, getTodoCollections, addTodoCollection, renameTodoCollection, deleteTodoCollection } from "@/lib/supabase-store";
-import type { TodoItem, GoalItem, TodoCollection } from "@/lib/store-types";
-import { MODULES } from "@/lib/modules";
+import { Plus, Trash2, Target, Calendar, Heart, Brain } from "lucide-react";
+import { getEmotionRecords, addEmotionRecord, deleteEmotionRecord, updateEmotionRecord, getRelationshipRecords, addRelationshipRecord, deleteRelationshipRecord, updateRelationshipRecord, getGoals, addGoal as addGoalDb, updateGoalStatus, deleteGoal as deleteGoalDb } from "@/lib/supabase-store";
+import type { EmotionRecord, RelationshipRecord, GoalItem } from "@/lib/store-types";
+import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -17,21 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
 
-const PRIORITY_COLORS = {
-  low: "text-muted-foreground",
-  medium: "text-amber-500",
-  high: "text-destructive",
+const DEFAULT_EMOTIONS = ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"];
+const DEFAULT_PERSONS = ["伴侣", "家人", "朋友", "同事"];
+
+const RELATION_STATUS_LABELS = { unresolved: "未解决", in_progress: "处理中", resolved: "已解决" };
+const RELATION_STATUS_COLORS = {
+  unresolved: "bg-destructive/10 text-destructive",
+  in_progress: "bg-amber-500/10 text-amber-600",
+  resolved: "bg-primary/10 text-primary",
 };
-
-const PRIORITY_LABELS = { low: "低", medium: "中", high: "高" };
 
 const STATUS_LABELS = { not_started: "未开始", in_progress: "进行中", completed: "已完成" };
 const STATUS_COLORS = {
@@ -42,63 +39,85 @@ const STATUS_COLORS = {
 
 export default function GoalsPage() {
   const { user } = useAuth();
-  const [todos, setTodos] = useState<TodoItem[]>([]);
+  const { config } = useModuleConfig();
+  const emotionTypes = config?.emotionTypes || DEFAULT_EMOTIONS;
+  const personList = config?.relationshipPersons || DEFAULT_PERSONS;
+  const [emotions, setEmotions] = useState<EmotionRecord[]>([]);
+  const [relationships, setRelationships] = useState<RelationshipRecord[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
-  const [collections, setCollections] = useState<TodoCollection[]>([]);
-  const [activeCollection, setActiveCollection] = useState<string | null>(null); // null = "全部"
-  const [showAddTodo, setShowAddTodo] = useState(false);
+
+  // Add emotion form
+  const [showAddEmotion, setShowAddEmotion] = useState(false);
+  const [newEmotionType, setNewEmotionType] = useState(emotionTypes[0]);
+  const [newIntensity, setNewIntensity] = useState(5);
+  const [newTrigger, setNewTrigger] = useState("");
+  const [newThoughts, setNewThoughts] = useState("");
+  const [newCoping, setNewCoping] = useState("");
+
+  // Add relationship form
+  const [showAddRelation, setShowAddRelation] = useState(false);
+  const [newPerson, setNewPerson] = useState("");
+  const [newProblem, setNewProblem] = useState("");
+  const [newSolution, setNewSolution] = useState("");
+  const [newReflection, setNewReflection] = useState("");
+
+  // Add goal form
   const [showAddGoal, setShowAddGoal] = useState(false);
-  const [newTodoText, setNewTodoText] = useState("");
-  const [newTodoPriority, setNewTodoPriority] = useState<"low" | "medium" | "high">("medium");
-  const [newTodoDueDate, setNewTodoDueDate] = useState("");
-  const [newTodoModule, setNewTodoModule] = useState("");
-  const [newTodoCollection, setNewTodoCollection] = useState("");
   const [newGoalTitle, setNewGoalTitle] = useState("");
   const [newGoalDesc, setNewGoalDesc] = useState("");
   const [newGoalType, setNewGoalType] = useState<"short_term" | "long_term">("short_term");
   const [newGoalDate, setNewGoalDate] = useState("");
 
-  // Collection management state
-  const [showNewCollection, setShowNewCollection] = useState(false);
-  const [newCollectionName, setNewCollectionName] = useState("");
-  const [editingCollection, setEditingCollection] = useState<TodoCollection | null>(null);
-  const [editCollectionName, setEditCollectionName] = useState("");
-
   const loadData = async () => {
     if (!user) return;
-    const [t, g, c] = await Promise.all([getTodos(user.id), getGoals(user.id), getTodoCollections(user.id)]);
-    setTodos(t);
+    const [e, r, g] = await Promise.all([
+      getEmotionRecords(user.id),
+      getRelationshipRecords(user.id),
+      getGoals(user.id),
+    ]);
+    setEmotions(e);
+    setRelationships(r);
     setGoals(g);
-    setCollections(c);
   };
 
   useEffect(() => { loadData(); }, [user]);
 
-  const handleAddTodo = async () => {
-    if (!newTodoText.trim() || !user) return;
-    await addTodoDb(user.id, {
-      text: newTodoText.trim(),
-      dueDate: newTodoDueDate || undefined,
-      priority: newTodoPriority,
-      moduleTag: newTodoModule || undefined,
-      collectionId: newTodoCollection || undefined,
-      completed: false,
-      points: 5,
+  // Emotion handlers
+  const handleAddEmotion = async () => {
+    if (!user) return;
+    await addEmotionRecord(user.id, {
+      date: format(new Date(), "yyyy-MM-dd"),
+      emotionType: newEmotionType,
+      intensity: newIntensity,
+      trigger: newTrigger,
+      thoughts: newThoughts,
+      copingStrategy: newCoping,
     });
-    setNewTodoText(""); setNewTodoDueDate(""); setNewTodoModule(""); setNewTodoCollection(""); setShowAddTodo(false);
+    setNewTrigger(""); setNewThoughts(""); setNewCoping(""); setNewIntensity(5); setShowAddEmotion(false);
     await loadData();
   };
 
-  const handleToggleTodo = async (id: string, completed: boolean) => {
-    await updateTodo(id, { completed: !completed });
+  // Relationship handlers
+  const handleAddRelation = async () => {
+    if (!newProblem.trim() || !user) return;
+    await addRelationshipRecord(user.id, {
+      date: format(new Date(), "yyyy-MM-dd"),
+      person: newPerson,
+      problem: newProblem,
+      solution: newSolution,
+      reflection: newReflection,
+      status: "unresolved",
+    });
+    setNewPerson(""); setNewProblem(""); setNewSolution(""); setNewReflection(""); setShowAddRelation(false);
     await loadData();
   };
 
-  const handleDeleteTodo = async (id: string) => {
-    await deleteTodoDb(id);
+  const handleRelationStatus = async (id: string, status: string) => {
+    await updateRelationshipRecord(id, { status: status as any });
     await loadData();
   };
 
+  // Goal handlers
   const handleAddGoal = async () => {
     if (!newGoalTitle.trim() || !user) return;
     await addGoalDb(user.id, {
@@ -113,225 +132,169 @@ export default function GoalsPage() {
     await loadData();
   };
 
-  const handleUpdateGoalStatus = async (id: string, status: string) => {
-    await updateGoalStatus(id, status);
-    await loadData();
-  };
-
-  const handleDeleteGoal = async (id: string) => {
-    await deleteGoalDb(id);
-    await loadData();
-  };
-
-  const handleCreateCollection = async () => {
-    if (!newCollectionName.trim() || !user) return;
-    await addTodoCollection(user.id, newCollectionName.trim());
-    setNewCollectionName("");
-    setShowNewCollection(false);
-    await loadData();
-  };
-
-  const handleRenameCollection = async () => {
-    if (!editingCollection || !editCollectionName.trim()) return;
-    await renameTodoCollection(editingCollection.id, editCollectionName.trim());
-    setEditingCollection(null);
-    setEditCollectionName("");
-    await loadData();
-  };
-
-  const handleDeleteCollection = async (id: string) => {
-    await deleteTodoCollection(id);
-    if (activeCollection === id) setActiveCollection(null);
-    await loadData();
-  };
-
-  // Filter todos by active collection
-  const filteredTodos = activeCollection
-    ? todos.filter((t) => t.collectionId === activeCollection)
-    : todos;
-
-  const pendingTodos = filteredTodos.filter((t) => !t.completed);
-  const completedTodos = filteredTodos.filter((t) => t.completed);
   const shortTermGoals = goals.filter((g) => g.type === "short_term");
   const longTermGoals = goals.filter((g) => g.type === "long_term");
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <h1 className="text-2xl font-display font-bold text-foreground mb-5">目标与待办</h1>
+      <h1 className="text-2xl font-display font-bold text-foreground mb-5">心灵记录</h1>
 
-      <Tabs defaultValue="todo" className="w-full">
+      <Tabs defaultValue="emotion" className="w-full">
         <TabsList className="w-full">
-          <TabsTrigger value="todo" className="flex-1">待办事项</TabsTrigger>
-          <TabsTrigger value="goals" className="flex-1">目标追踪</TabsTrigger>
+          <TabsTrigger value="emotion" className="flex-1 gap-1"><Brain className="w-3.5 h-3.5" />情绪</TabsTrigger>
+          <TabsTrigger value="relationship" className="flex-1 gap-1"><Heart className="w-3.5 h-3.5" />关系</TabsTrigger>
+          <TabsTrigger value="goals" className="flex-1 gap-1"><Target className="w-3.5 h-3.5" />目标</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="todo">
+        {/* ─── 情绪记录 ─── */}
+        <TabsContent value="emotion">
           <div className="mt-4">
-            {/* Collection tabs */}
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
-              <button
-                onClick={() => setActiveCollection(null)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
-                  activeCollection === null
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-accent"
-                )}
-              >
-                全部
-              </button>
-              {collections.map((col) => (
-                <button
-                  key={col.id}
-                  onClick={() => setActiveCollection(col.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 group",
-                    activeCollection === col.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-accent"
-                  )}
-                >
-                  <Folder className="w-3 h-3" />
-                  {col.name}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setEditingCollection(col); setEditCollectionName(col.name); }}
-                    className="opacity-0 group-hover:opacity-100 ml-0.5 hover:text-foreground"
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                </button>
-              ))}
-              <button
-                onClick={() => setShowNewCollection(true)}
-                className="px-2 py-1.5 rounded-full text-xs text-muted-foreground hover:bg-accent transition-colors"
-                title="新建待办集"
-              >
-                <FolderPlus className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* New collection inline input */}
-            <AnimatePresence>
-              {showNewCollection && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-3">
-                  <div className="flex items-center gap-2 bg-card rounded-xl shadow-card p-3">
-                    <Input
-                      placeholder="待办集名称..."
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleCreateCollection()}
-                      autoFocus
-                      className="h-8 text-sm"
-                    />
-                    <Button size="sm" onClick={handleCreateCollection} className="h-8 px-3">创建</Button>
-                    <Button size="sm" variant="ghost" onClick={() => { setShowNewCollection(false); setNewCollectionName(""); }} className="h-8 px-2">
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <div className="flex justify-end mb-3">
-              <Button size="sm" onClick={() => setShowAddTodo(!showAddTodo)} className="rounded-full">
-                <Plus className="w-4 h-4 mr-1" />添加
+              <Button size="sm" onClick={() => setShowAddEmotion(!showAddEmotion)} className="rounded-full">
+                <Plus className="w-4 h-4 mr-1" />记录情绪
               </Button>
             </div>
 
             <AnimatePresence>
-              {showAddTodo && (
+              {showAddEmotion && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
                   <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
-                    <Input placeholder="添加新待办..." value={newTodoText} onChange={(e) => setNewTodoText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddTodo()} autoFocus />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input type="date" value={newTodoDueDate} onChange={(e) => setNewTodoDueDate(e.target.value)} />
-                      <Select value={newTodoPriority} onValueChange={(v) => setNewTodoPriority(v as any)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">低优先级</SelectItem>
-                          <SelectItem value="medium">中优先级</SelectItem>
-                          <SelectItem value="high">高优先级</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1.5 block">情绪类型</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {emotionTypes.map((e) => (
+                          <button
+                            key={e}
+                            onClick={() => setNewEmotionType(e)}
+                            className={cn(
+                              "px-2.5 py-1 rounded-full text-xs transition-colors",
+                              newEmotionType === e ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                            )}
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Select value={newTodoModule} onValueChange={setNewTodoModule}>
-                        <SelectTrigger><SelectValue placeholder="关联模块（可选）" /></SelectTrigger>
-                        <SelectContent>
-                          {MODULES.map((m) => (
-                            <SelectItem key={m.key} value={m.key}>{m.icon} {m.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={newTodoCollection} onValueChange={setNewTodoCollection}>
-                        <SelectTrigger><SelectValue placeholder="待办集（可选）" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">无</SelectItem>
-                          {collections.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1.5 block">强度: {newIntensity}/10</label>
+                      <Slider value={[newIntensity]} onValueChange={(v) => setNewIntensity(v[0])} min={1} max={10} step={1} className="w-full" />
                     </div>
+                    <Textarea placeholder="触发事件（什么引起了这个情绪？）" value={newTrigger} onChange={(e) => setNewTrigger(e.target.value)} className="min-h-[60px] resize-none" />
+                    <Textarea placeholder="内心想法（当时你在想什么？）" value={newThoughts} onChange={(e) => setNewThoughts(e.target.value)} className="min-h-[60px] resize-none" />
+                    <Textarea placeholder="应对方式（你是怎么处理的？）" value={newCoping} onChange={(e) => setNewCoping(e.target.value)} className="min-h-[60px] resize-none" />
                     <div className="flex gap-2">
-                      <Button onClick={handleAddTodo} size="sm">确认</Button>
-                      <Button variant="ghost" size="sm" onClick={() => setShowAddTodo(false)}>取消</Button>
+                      <Button onClick={handleAddEmotion} size="sm">保存</Button>
+                      <Button variant="ghost" size="sm" onClick={() => setShowAddEmotion(false)}>取消</Button>
                     </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {pendingTodos.length === 0 && !showAddTodo && (
-              <div className="text-center py-12"><p className="text-muted-foreground text-sm">暂无待办事项</p></div>
+            {emotions.length === 0 && !showAddEmotion && (
+              <div className="text-center py-12"><p className="text-muted-foreground text-sm">暂无情绪记录，点击上方按钮开始记录</p></div>
             )}
 
             <div className="space-y-2">
-              <AnimatePresence>
-                {pendingTodos.map((todo) => {
-                  const mod = todo.moduleTag ? MODULES.find(m => m.key === todo.moduleTag) : null;
-                  const col = todo.collectionId ? collections.find(c => c.id === todo.collectionId) : null;
-                  return (
-                    <motion.div key={todo.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -100 }} className="bg-card rounded-xl shadow-card p-4">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => handleToggleTodo(todo.id, todo.completed)} className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 hover:border-primary/50 transition-colors shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm">{todo.text}</span>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Flag className={cn("w-3 h-3", PRIORITY_COLORS[todo.priority])} />
-                            <span className={cn("text-xs", PRIORITY_COLORS[todo.priority])}>{PRIORITY_LABELS[todo.priority]}</span>
-                            {todo.dueDate && <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{todo.dueDate}</span>}
-                            {mod && <span className={cn("text-xs px-1.5 py-0.5 rounded-full", mod.bgClass, mod.fgClass)}>{mod.icon} {mod.name}</span>}
-                            {col && <span className="text-xs px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground flex items-center gap-0.5"><Folder className="w-3 h-3" />{col.name}</span>}
-                          </div>
+              {emotions.map((record) => (
+                <motion.div key={record.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <span className="text-base font-medium">{record.emotionType}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-muted-foreground">{record.date}</span>
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: 10 }).map((_, i) => (
+                            <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i < record.intensity ? "bg-primary" : "bg-muted")} />
+                          ))}
                         </div>
-                        <button onClick={() => handleDeleteTodo(todo.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                    </div>
+                    <button onClick={() => deleteEmotionRecord(record.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {record.trigger && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">触发: </span>{record.trigger}</p>}
+                  {record.thoughts && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">想法: </span>{record.thoughts}</p>}
+                  {record.copingStrategy && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">应对: </span>{record.copingStrategy}</p>}
+                </motion.div>
+              ))}
             </div>
-
-            {completedTodos.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">已完成 ({completedTodos.length})</h3>
-                <div className="space-y-2">
-                  {completedTodos.map((todo) => (
-                    <motion.div key={todo.id} layout className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3 opacity-60">
-                      <button onClick={() => handleToggleTodo(todo.id, todo.completed)} className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                      </button>
-                      <span className="flex-1 text-sm line-through text-muted-foreground">{todo.text}</span>
-                      <button onClick={() => handleDeleteTodo(todo.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
 
+        {/* ─── 亲密关系记录 ─── */}
+        <TabsContent value="relationship">
+          <div className="mt-4">
+            <div className="flex justify-end mb-3">
+              <Button size="sm" onClick={() => setShowAddRelation(!showAddRelation)} className="rounded-full">
+                <Plus className="w-4 h-4 mr-1" />记录问题
+              </Button>
+            </div>
+
+            <AnimatePresence>
+              {showAddRelation && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
+                  <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
+                    <Select value={newPerson} onValueChange={setNewPerson}>
+                      <SelectTrigger><SelectValue placeholder="选择对象" /></SelectTrigger>
+                      <SelectContent>
+                        {personList.map((p) => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Textarea placeholder="遇到的问题..." value={newProblem} onChange={(e) => setNewProblem(e.target.value)} className="min-h-[80px] resize-none" />
+                    <Textarea placeholder="解决方式（可稍后补充）" value={newSolution} onChange={(e) => setNewSolution(e.target.value)} className="min-h-[60px] resize-none" />
+                    <Textarea placeholder="反思与收获（可稍后补充）" value={newReflection} onChange={(e) => setNewReflection(e.target.value)} className="min-h-[60px] resize-none" />
+                    <div className="flex gap-2">
+                      <Button onClick={handleAddRelation} size="sm">保存</Button>
+                      <Button variant="ghost" size="sm" onClick={() => setShowAddRelation(false)}>取消</Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {relationships.length === 0 && !showAddRelation && (
+              <div className="text-center py-12"><p className="text-muted-foreground text-sm">暂无关系记录，点击上方按钮开始记录</p></div>
+            )}
+
+            <div className="space-y-2">
+              {relationships.map((record) => (
+                <motion.div key={record.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {record.person && <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{record.person}</span>}
+                        <button
+                          onClick={() => {
+                            const statuses = ["unresolved", "in_progress", "resolved"] as const;
+                            const idx = statuses.indexOf(record.status);
+                            handleRelationStatus(record.id, statuses[(idx + 1) % 3]);
+                          }}
+                          className={cn("text-[10px] px-2 py-0.5 rounded-full", RELATION_STATUS_COLORS[record.status])}
+                        >
+                          {RELATION_STATUS_LABELS[record.status]}
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">{record.date}</span>
+                    </div>
+                    <button onClick={() => deleteRelationshipRecord(record.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-sm mt-1"><span className="font-medium text-foreground/70">问题: </span>{record.problem}</p>
+                  {record.solution && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">解决: </span>{record.solution}</p>}
+                  {record.reflection && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">反思: </span>{record.reflection}</p>}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ─── 目标追踪 ─── */}
         <TabsContent value="goals">
           <div className="mt-4">
             <div className="flex justify-end mb-3">
@@ -365,89 +328,84 @@ export default function GoalsPage() {
               )}
             </AnimatePresence>
 
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Target className="w-4 h-4 text-primary" />近期目标</h3>
-              {shortTermGoals.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-6">暂无近期目标</p>
-              ) : (
+            {goals.length === 0 && !showAddGoal && (
+              <div className="text-center py-12"><p className="text-muted-foreground text-sm">暂无目标</p></div>
+            )}
+
+            {shortTermGoals.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">近期目标</h3>
                 <div className="space-y-2">
                   {shortTermGoals.map((goal) => (
-                    <GoalCard key={goal.id} goal={goal} onUpdateStatus={handleUpdateGoalStatus} onDelete={handleDeleteGoal} />
+                    <motion.div key={goal.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
+                      <div className="flex items-start gap-3">
+                        <Target className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium">{goal.title}</h4>
+                          {goal.description && <p className="text-xs text-muted-foreground mt-0.5">{goal.description}</p>}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Select value={goal.status} onValueChange={(v) => updateGoalStatus(goal.id, v).then(loadData)}>
+                              <SelectTrigger className="h-6 text-[10px] w-auto px-2">
+                                <span className={cn("px-1.5 py-0.5 rounded-full text-[10px]", STATUS_COLORS[goal.status as keyof typeof STATUS_COLORS])}>
+                                  {STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS]}
+                                </span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="not_started">未开始</SelectItem>
+                                <SelectItem value="in_progress">进行中</SelectItem>
+                                <SelectItem value="completed">已完成</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {goal.targetDate && <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Calendar className="w-3 h-3" />{goal.targetDate}</span>}
+                            <span className="text-[10px] text-primary">+{goal.points}分</span>
+                          </div>
+                        </div>
+                        <button onClick={() => deleteGoalDb(goal.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Target className="w-4 h-4 text-module-goals-fg" />远期目标</h3>
-              {longTermGoals.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-6">暂无远期目标</p>
-              ) : (
+            {longTermGoals.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">远期目标</h3>
                 <div className="space-y-2">
                   {longTermGoals.map((goal) => (
-                    <GoalCard key={goal.id} goal={goal} onUpdateStatus={handleUpdateGoalStatus} onDelete={handleDeleteGoal} />
+                    <motion.div key={goal.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
+                      <div className="flex items-start gap-3">
+                        <Target className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium">{goal.title}</h4>
+                          {goal.description && <p className="text-xs text-muted-foreground mt-0.5">{goal.description}</p>}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Select value={goal.status} onValueChange={(v) => updateGoalStatus(goal.id, v).then(loadData)}>
+                              <SelectTrigger className="h-6 text-[10px] w-auto px-2">
+                                <span className={cn("px-1.5 py-0.5 rounded-full text-[10px]", STATUS_COLORS[goal.status as keyof typeof STATUS_COLORS])}>
+                                  {STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS]}
+                                </span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="not_started">未开始</SelectItem>
+                                <SelectItem value="in_progress">进行中</SelectItem>
+                                <SelectItem value="completed">已完成</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {goal.targetDate && <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Calendar className="w-3 h-3" />{goal.targetDate}</span>}
+                            <span className="text-[10px] text-primary">+{goal.points}分</span>
+                          </div>
+                        </div>
+                        <button onClick={() => deleteGoalDb(goal.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Rename collection dialog */}
-      <Dialog open={!!editingCollection} onOpenChange={(open) => { if (!open) setEditingCollection(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>编辑待办集</DialogTitle>
-          </DialogHeader>
-          <Input
-            value={editCollectionName}
-            onChange={(e) => setEditCollectionName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleRenameCollection()}
-            placeholder="待办集名称"
-            autoFocus
-          />
-          <DialogFooter className="flex-row gap-2">
-            <Button onClick={handleRenameCollection} size="sm">保存</Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => { if (editingCollection) handleDeleteCollection(editingCollection.id); }}
-            >
-              <Trash2 className="w-4 h-4 mr-1" />删除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-function GoalCard({ goal, onUpdateStatus, onDelete }: { goal: GoalItem; onUpdateStatus: (id: string, status: string) => void; onDelete: (id: string) => void }) {
-  return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cn("bg-card rounded-xl shadow-card p-4", goal.status === "completed" && "opacity-60")}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h4 className={cn("font-medium text-sm", goal.status === "completed" && "line-through text-muted-foreground")}>{goal.title}</h4>
-          {goal.description && <p className="text-xs text-muted-foreground mt-1">{goal.description}</p>}
-          <div className="flex items-center gap-2 mt-2">
-            <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", STATUS_COLORS[goal.status])}>{STATUS_LABELS[goal.status]}</span>
-            <span className="text-xs text-muted-foreground">+{goal.points}分</span>
-            {goal.targetDate && <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{goal.targetDate}</span>}
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Select value={goal.status} onValueChange={(v) => onUpdateStatus(goal.id, v)}>
-            <SelectTrigger className="h-7 text-xs w-20 px-2"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="not_started">未开始</SelectItem>
-              <SelectItem value="in_progress">进行中</SelectItem>
-              <SelectItem value="completed">已完成</SelectItem>
-            </SelectContent>
-          </Select>
-          <button onClick={() => onDelete(goal.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
-        </div>
-      </div>
-    </motion.div>
   );
 }

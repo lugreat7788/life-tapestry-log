@@ -43,9 +43,35 @@ export interface TodoCollection {
   createdAt: string;
 }
 
+export interface EmotionRecord {
+  id: string;
+  userId: string;
+  date: string;
+  emotionType: string;
+  intensity: number;
+  trigger: string;
+  thoughts: string;
+  copingStrategy: string;
+  createdAt: string;
+}
+
+export interface RelationshipRecord {
+  id: string;
+  userId: string;
+  date: string;
+  person: string;
+  problem: string;
+  solution: string;
+  reflection: string;
+  status: "unresolved" | "in_progress" | "resolved";
+  createdAt: string;
+}
+
 export interface ModuleConfig {
   modules: Record<string, {
     name?: string;
     items: Array<{ id: string; name: string; points: number }>;
   }>;
+  emotionTypes?: string[];
+  relationshipPersons?: string[];
 }

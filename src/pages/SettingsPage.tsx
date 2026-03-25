@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints } from "@/lib/modules";
 import type { Module } from "@/lib/modules";
-import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals } from "@/lib/supabase-store";
+import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords } from "@/lib/supabase-store";
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { User, Download, ChevronRight, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut } from "lucide-react";
+import { User, Download, ChevronRight, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -32,6 +32,8 @@ export default function SettingsPage() {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [editingModuleName, setEditingModuleName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [newEmotionType, setNewEmotionType] = useState("");
+  const [newRelationPerson, setNewRelationPerson] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -110,7 +112,7 @@ export default function SettingsPage() {
     if (!user) return;
     try {
       toast.info("正在导出数据...");
-      const [logs, todos, goals] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id)]);
+      const [logs, todos, goals, emotionRecords, relationshipRecords] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id), getEmotionRecords(user.id), getRelationshipRecords(user.id)]);
       const exportData = {
         exportDate: new Date().toISOString(),
         email: user.email,
@@ -120,6 +122,8 @@ export default function SettingsPage() {
         })),
         todos: todos.map((t) => ({ text: t.text, priority: t.priority, completed: t.completed, dueDate: t.dueDate || null, points: t.points })),
         goals: goals.map((g) => ({ title: g.title, description: g.description, type: g.type, status: g.status, targetDate: g.targetDate || null, points: g.points })),
+        emotionRecords: emotionRecords.map((e) => ({ date: e.date, emotionType: e.emotionType, intensity: e.intensity, trigger: e.trigger, thoughts: e.thoughts, copingStrategy: e.copingStrategy })),
+        relationshipRecords: relationshipRecords.map((r) => ({ date: r.date, person: r.person, problem: r.problem, solution: r.solution, reflection: r.reflection, status: r.status })),
       };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -251,6 +255,55 @@ export default function SettingsPage() {
       <div className="mb-6">
         <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">🏆 目标追踪 · 积分设置</h2>
         <div className="space-y-2">{renderModuleEditor(allModules.goals)}</div>
+      </div>
+
+      {/* Emotion & Relationship Settings */}
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">🧠 情绪类型管理</h2>
+        <div className="bg-card rounded-xl shadow-card p-4 space-y-2">
+          <div className="flex flex-wrap gap-1.5">
+            {(config?.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]).map((type, idx) => (
+              <div key={idx} className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-1 text-xs">
+                <span>{type}</span>
+                <button onClick={() => {
+                  const cfg = ensureConfig();
+                  const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"];
+                  types.splice(idx, 1);
+                  cfg.emotionTypes = types;
+                  updateConfig(cfg);
+                }} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input className="h-8 text-sm" placeholder="添加情绪类型（如：😅 尴尬）" value={newEmotionType} onChange={(e) => setNewEmotionType(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newEmotionType.trim()) { const cfg = ensureConfig(); const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]; types.push(newEmotionType.trim()); cfg.emotionTypes = types; updateConfig(cfg); setNewEmotionType(""); }}} />
+            <Button size="sm" variant="outline" className="h-8" onClick={() => { if (!newEmotionType.trim()) return; const cfg = ensureConfig(); const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]; types.push(newEmotionType.trim()); cfg.emotionTypes = types; updateConfig(cfg); setNewEmotionType(""); }}><Plus className="w-3.5 h-3.5" /></Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">❤️ 关系对象管理</h2>
+        <div className="bg-card rounded-xl shadow-card p-4 space-y-2">
+          <div className="flex flex-wrap gap-1.5">
+            {(config?.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]).map((person, idx) => (
+              <div key={idx} className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-1 text-xs">
+                <span>{person}</span>
+                <button onClick={() => {
+                  const cfg = ensureConfig();
+                  const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"];
+                  persons.splice(idx, 1);
+                  cfg.relationshipPersons = persons;
+                  updateConfig(cfg);
+                }} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input className="h-8 text-sm" placeholder="添加关系对象" value={newRelationPerson} onChange={(e) => setNewRelationPerson(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newRelationPerson.trim()) { const cfg = ensureConfig(); const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]; persons.push(newRelationPerson.trim()); cfg.relationshipPersons = persons; updateConfig(cfg); setNewRelationPerson(""); }}} />
+            <Button size="sm" variant="outline" className="h-8" onClick={() => { if (!newRelationPerson.trim()) return; const cfg = ensureConfig(); const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]; persons.push(newRelationPerson.trim()); cfg.relationshipPersons = persons; updateConfig(cfg); setNewRelationPerson(""); }}><Plus className="w-3.5 h-3.5" /></Button>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-2">
