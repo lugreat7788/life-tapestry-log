@@ -112,7 +112,7 @@ export default function SettingsPage() {
     if (!user) return;
     try {
       toast.info("正在导出数据...");
-      const [logs, todos, goals] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id)]);
+      const [logs, todos, goals, emotionRecords, relationshipRecords] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id), getEmotionRecords(user.id), getRelationshipRecords(user.id)]);
       const exportData = {
         exportDate: new Date().toISOString(),
         email: user.email,
@@ -122,6 +122,8 @@ export default function SettingsPage() {
         })),
         todos: todos.map((t) => ({ text: t.text, priority: t.priority, completed: t.completed, dueDate: t.dueDate || null, points: t.points })),
         goals: goals.map((g) => ({ title: g.title, description: g.description, type: g.type, status: g.status, targetDate: g.targetDate || null, points: g.points })),
+        emotionRecords: emotionRecords.map((e) => ({ date: e.date, emotionType: e.emotionType, intensity: e.intensity, trigger: e.trigger, thoughts: e.thoughts, copingStrategy: e.copingStrategy })),
+        relationshipRecords: relationshipRecords.map((r) => ({ date: r.date, person: r.person, problem: r.problem, solution: r.solution, reflection: r.reflection, status: r.status })),
       };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
