@@ -33,8 +33,11 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const module = getModule(moduleKey)!;
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
   const [photoUrls, setPhotoUrls] = useState<Record<string, string[]>>({});
+  const [fileUrls, setFileUrls] = useState<Record<string, string[]>>({});
   const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadType, setUploadType] = useState<"photo" | "file">("photo");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const generalFileInputRef = useRef<HTMLInputElement>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
 
   const loadLog = useCallback(async () => {
