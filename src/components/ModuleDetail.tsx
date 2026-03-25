@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, MessageSquare, Camera, X, Image as ImageIcon } from "lucide-react";
+import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun } from "lucide-react";
 import { getModuleMaxPoints } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
-import { getDailyLog, toggleEntry, updateEntryNotes } from "@/lib/supabase-store";
+import { getDailyLog, toggleEntry, updateEntryNotes, updateSleepTime } from "@/lib/supabase-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   Drawer,
