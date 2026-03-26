@@ -15,7 +15,7 @@ export default function HeroCard({ corePoints, bonusPoints, streakDays, allTimeP
   const todayPoints = corePoints + bonusPoints;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-primary px-5 py-4 text-primary-foreground shadow-elevated">
+    <div className="relative overflow-hidden rounded-2xl bg-primary px-5 py-3 text-primary-foreground shadow-elevated">
       <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-primary-foreground/5" />
       <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-primary-foreground/4" />
 
