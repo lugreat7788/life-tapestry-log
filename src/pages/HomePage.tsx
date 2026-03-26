@@ -60,17 +60,17 @@ export default function HomePage() {
   }
 
   return (
-    <div className="px-5 pt-5 pb-4 max-w-lg mx-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="px-5 pt-6 pb-4 max-w-lg mx-auto">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-display font-semibold text-foreground tracking-tight">LifeLog</h1>
-          <p className="text-[11px] text-muted-foreground font-light">{today}</p>
+          <h1 className="text-[17px] font-display font-semibold text-foreground">LifeLog</h1>
+          <p className="text-[11px] text-muted-foreground/70 font-light mt-0.5">{today}</p>
         </div>
       </div>
 
       <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} />
 
-      <h2 className="text-[10px] font-medium text-muted-foreground mt-4 mb-3 uppercase tracking-widest">
+      <h2 className="text-[9px] font-medium text-muted-foreground/60 mt-5 mb-3 uppercase tracking-[0.15em]">
         每日必修
       </h2>
       <div className="grid gap-2.5">
