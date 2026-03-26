@@ -5,7 +5,7 @@ import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTo
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { User, Download, ChevronRight, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart } from "lucide-react";
+import { User, Download, ChevronRight, ChevronDown, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
