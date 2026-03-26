@@ -336,8 +336,6 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
-        </div>
-      </div>
 
       <div className="space-y-2">
         <div className="bg-card rounded-xl shadow-card p-4">
