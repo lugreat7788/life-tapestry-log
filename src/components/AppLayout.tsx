@@ -16,7 +16,7 @@ export default function AppLayout() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <main className="flex-1 pb-[4.5rem] overflow-y-auto">
+      <main className="flex-1 pb-[5rem] overflow-y-auto">
         <Outlet />
       </main>
 
