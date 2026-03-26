@@ -34,7 +34,7 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
       transition={{ delay: index * 0.03, duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
       onClick={() => navigate(`/modules/${module.key}`)}
       className={cn(
-        "w-full text-left rounded-2xl p-4 transition-all duration-200",
+        "w-full text-left rounded-2xl px-4 py-3 transition-all duration-200",
         "bg-card shadow-card hover:shadow-elevated active:scale-[0.99]",
         allDone && "ring-1 ring-primary/15",
         showBonus && "border border-dashed border-muted-foreground/10"
