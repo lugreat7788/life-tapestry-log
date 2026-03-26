@@ -7,68 +7,68 @@
 
 @layer base {
   :root {
-    --background: 120 10% 97%;
-    --foreground: 160 10% 15%;
+    --background: 140 6% 97%;
+    --foreground: 160 8% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 160 10% 15%;
+    --card-foreground: 160 8% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 160 10% 15%;
+    --popover-foreground: 160 8% 12%;
 
-    --primary: 152 45% 45%;
+    --primary: 152 40% 42%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 120 8% 94%;
-    --secondary-foreground: 160 10% 15%;
+    --secondary: 140 5% 94%;
+    --secondary-foreground: 160 8% 12%;
 
-    --muted: 120 8% 94%;
-    --muted-foreground: 160 6% 50%;
+    --muted: 140 5% 93%;
+    --muted-foreground: 160 4% 52%;
 
-    --accent: 120 8% 94%;
-    --accent-foreground: 160 10% 15%;
+    --accent: 140 5% 93%;
+    --accent-foreground: 160 8% 12%;
 
-    --destructive: 0 60% 55%;
+    --destructive: 0 55% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 120 8% 90%;
-    --input: 120 8% 90%;
-    --ring: 152 45% 45%;
+    --border: 140 5% 91%;
+    --input: 140 5% 89%;
+    --ring: 152 40% 42%;
 
-    --radius: 1rem;
+    --radius: 0.875rem;
 
     /* Module accent colors — soft botanical palette */
-    --module-health: 152 30% 93%;
-    --module-health-fg: 152 35% 35%;
-    --module-learning: 200 30% 93%;
-    --module-learning-fg: 200 30% 35%;
-    --module-goals: 42 35% 92%;
-    --module-goals-fg: 42 30% 35%;
-    --module-relationships: 340 25% 93%;
-    --module-relationships-fg: 340 25% 38%;
-    --module-daily-record: 260 20% 94%;
-    --module-daily-record-fg: 260 20% 40%;
-    --module-output: 25 30% 93%;
-    --module-output-fg: 25 30% 38%;
-    --module-challenge: 8 30% 93%;
-    --module-challenge-fg: 8 30% 38%;
-    --module-new-things: 170 25% 92%;
-    --module-new-things-fg: 170 25% 35%;
-    --module-entropy-reduction: 190 20% 93%;
-    --module-entropy-reduction-fg: 190 20% 38%;
+    --module-health: 152 25% 93%;
+    --module-health-fg: 152 30% 32%;
+    --module-learning: 200 25% 93%;
+    --module-learning-fg: 200 25% 32%;
+    --module-goals: 42 30% 92%;
+    --module-goals-fg: 42 25% 32%;
+    --module-relationships: 340 20% 93%;
+    --module-relationships-fg: 340 22% 35%;
+    --module-daily-record: 260 18% 94%;
+    --module-daily-record-fg: 260 18% 38%;
+    --module-output: 25 25% 93%;
+    --module-output-fg: 25 25% 35%;
+    --module-challenge: 8 25% 93%;
+    --module-challenge-fg: 8 25% 35%;
+    --module-new-things: 170 22% 92%;
+    --module-new-things-fg: 170 22% 32%;
+    --module-entropy-reduction: 190 18% 93%;
+    --module-entropy-reduction-fg: 190 18% 35%;
 
-    /* Shadows — softer, Apple-like */
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.03), 0 1px 2px -1px rgb(0 0 0 / 0.02);
-    --shadow-elevated: 0 8px 30px -8px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.03);
+    /* Shadows — refined depth */
+    --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 0 0 1px rgb(0 0 0 / 0.02);
+    --shadow-elevated: 0 4px 24px -6px rgb(0 0 0 / 0.08), 0 1px 4px -1px rgb(0 0 0 / 0.03);
 
-    --sidebar-background: 120 8% 97%;
-    --sidebar-foreground: 160 6% 30%;
-    --sidebar-primary: 160 10% 15%;
+    --sidebar-background: 140 5% 97%;
+    --sidebar-foreground: 160 4% 30%;
+    --sidebar-primary: 160 8% 12%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 120 8% 94%;
-    --sidebar-accent-foreground: 160 10% 15%;
-    --sidebar-border: 120 8% 90%;
-    --sidebar-ring: 152 45% 45%;
+    --sidebar-accent: 140 5% 94%;
+    --sidebar-accent-foreground: 160 8% 12%;
+    --sidebar-border: 140 5% 91%;
+    --sidebar-ring: 152 40% 42%;
   }
 }
 
