@@ -29,34 +29,34 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ delay: index * 0.03, duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
       onClick={() => navigate(`/modules/${module.key}`)}
       className={cn(
-        "w-full text-left rounded-xl p-4 transition-all duration-300",
-        "bg-card shadow-card hover:shadow-elevated",
-        allDone && "ring-1 ring-primary/20",
-        showBonus && "border border-dashed border-muted-foreground/15"
+        "w-full text-left rounded-2xl p-4 transition-all duration-200",
+        "bg-card shadow-card hover:shadow-elevated active:scale-[0.99]",
+        allDone && "ring-1 ring-primary/15",
+        showBonus && "border border-dashed border-muted-foreground/10"
       )}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-base", module.bgClass)}>
+          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-base", module.bgClass)}>
             {module.icon}
           </div>
           <div>
-            <h3 className="font-display font-medium text-sm text-foreground">
+            <h3 className="font-display font-medium text-[13px] text-foreground leading-tight">
               {module.name}
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5 font-light">
+            <p className="text-[11px] text-muted-foreground mt-0.5 font-light tabular-nums">
               {showBonus ? `+${earnedPoints}` : `${earnedPoints}/${maxPoints}`} 分
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-light">
+        <div className="flex items-center gap-2.5">
+          <span className="text-[11px] text-muted-foreground font-light tabular-nums">
             {completedCount}/{totalCount}
           </span>
           {allDone && (
@@ -71,9 +71,9 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
         </div>
       </div>
 
-      <div className="mt-2 h-0.5 rounded-full bg-muted overflow-hidden">
+      <div className="mt-3 h-[3px] rounded-full bg-muted overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-primary/40"
+          className="h-full rounded-full bg-primary/35"
           initial={{ width: 0 }}
           animate={{ width: `${(completedCount / totalCount) * 100}%` }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.03 + 0.2 }}
