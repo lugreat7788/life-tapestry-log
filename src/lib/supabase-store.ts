@@ -378,6 +378,7 @@ export async function getGoals(userId: string): Promise<GoalItem[]> {
     status: g.status as "not_started" | "in_progress" | "completed",
     points: g.points,
     collectionId: g.collection_id || undefined,
+    linkedHabitId: g.linked_habit_id || undefined,
     createdAt: g.created_at,
   }));
 }
@@ -392,6 +393,7 @@ export async function addGoal(userId: string, goal: Omit<GoalItem, "id" | "creat
     status: goal.status,
     points: goal.points,
     collection_id: goal.collectionId || null,
+    linked_habit_id: goal.linkedHabitId || null,
   } as any);
 }
 

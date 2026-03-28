@@ -113,6 +113,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          linked_habit_id: string | null
           points: number
           status: string
           target_date: string | null
@@ -126,6 +127,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          linked_habit_id?: string | null
           points?: number
           status?: string
           target_date?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          linked_habit_id?: string | null
           points?: number
           status?: string
           target_date?: string | null
