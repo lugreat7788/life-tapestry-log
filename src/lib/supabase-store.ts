@@ -108,11 +108,88 @@ export async function toggleEntry(
         item_id: itemId,
         module_key: moduleKey,
         completed: true,
+        completion_type: "full",
         notes: "",
-      });
+      } as any);
     await supabase
       .from("daily_logs")
       .update({ total_points: log.total_points + points })
+      .eq("id", log.id);
+  }
+}
+
+// Toggle entry with minimum completion
+export async function toggleEntryMinimum(
+  userId: string,
+  moduleKey: string,
+  itemId: string,
+  minPoints: number,
+  date?: Date
+) {
+  const dateStr = format(date || new Date(), "yyyy-MM-dd");
+
+  let { data: log } = await supabase
+    .from("daily_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("date", dateStr)
+    .maybeSingle();
+
+  if (!log) {
+    const { data: newLog } = await supabase
+      .from("daily_logs")
+      .insert({ user_id: userId, date: dateStr, total_points: 0 })
+      .select()
+      .single();
+    log = newLog;
+  }
+
+  if (!log) return;
+
+  const { data: existing } = await supabase
+    .from("log_entries")
+    .select("*")
+    .eq("daily_log_id", log.id)
+    .eq("item_id", itemId)
+    .maybeSingle();
+
+  if (existing?.completed) {
+    // Uncomplete
+    const prevType = (existing as any).completion_type || "full";
+    await supabase
+      .from("log_entries")
+      .update({ completed: false, completion_type: "full" } as any)
+      .eq("id", existing.id);
+    // We don't know previous points exactly, recalc would be complex. Just subtract minPoints if was minimum.
+    const ptsToRemove = prevType === "minimum" ? minPoints : minPoints;
+    await supabase
+      .from("daily_logs")
+      .update({ total_points: Math.max(0, log.total_points - ptsToRemove) })
+      .eq("id", log.id);
+  } else if (existing) {
+    await supabase
+      .from("log_entries")
+      .update({ completed: true, completion_type: "minimum" } as any)
+      .eq("id", existing.id);
+    await supabase
+      .from("daily_logs")
+      .update({ total_points: log.total_points + minPoints })
+      .eq("id", log.id);
+  } else {
+    await supabase
+      .from("log_entries")
+      .insert({
+        user_id: userId,
+        daily_log_id: log.id,
+        item_id: itemId,
+        module_key: moduleKey,
+        completed: true,
+        completion_type: "minimum",
+        notes: "",
+      } as any);
+    await supabase
+      .from("daily_logs")
+      .update({ total_points: log.total_points + minPoints })
       .eq("id", log.id);
   }
 }
