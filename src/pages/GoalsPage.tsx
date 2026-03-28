@@ -457,6 +457,21 @@ export default function GoalsPage() {
                         </SelectContent>
                       </Select>
                     )}
+                    {/* Habit pairing */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1.5 block flex items-center gap-1">
+                        <Link2 className="w-3 h-3" /> 是否关联一个每日习惯？
+                      </label>
+                      <Select value={newGoalLinkedHabit} onValueChange={setNewGoalLinkedHabit}>
+                        <SelectTrigger><SelectValue placeholder="选择关联习惯（可选）" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">不关联</SelectItem>
+                          {allHabitItems.map((h) => (
+                            <SelectItem key={h.id} value={h.id}>{h.module} · {h.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex gap-2">
                       <Button onClick={handleAddGoal} size="sm">确认</Button>
                       <Button variant="ghost" size="sm" onClick={() => setShowAddGoal(false)}>取消</Button>
