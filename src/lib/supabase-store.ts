@@ -181,6 +181,7 @@ export async function getAllLogs(userId: string) {
         itemId: e.item_id,
         moduleKey: e.module_key,
         completed: e.completed,
+        completionType: e.completion_type || "full",
         notes: e.notes || "",
         timestamp: e.created_at,
         sleepBedtime: e.sleep_bedtime || "",
