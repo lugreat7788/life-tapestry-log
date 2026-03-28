@@ -10,6 +10,7 @@ import {
   getRedemptions, addRedemption, getAllTimePoints, getTotalSpentPoints,
 } from "@/lib/supabase-store";
 import type { EmotionRecord, RelationshipRecord, GoalItem, GoalCollection, RewardItem, RedemptionRecord } from "@/lib/store-types";
+import { CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
