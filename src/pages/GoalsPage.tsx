@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Target, Calendar, Heart, Brain, Gift, ShoppingBag, FolderPlus, ChevronDown, ChevronRight, Edit2, Check } from "lucide-react";
+import { Plus, Trash2, Target, Calendar, Heart, Brain, Gift, ShoppingBag, FolderPlus, ChevronDown, ChevronRight, Edit2, Check, Link2 } from "lucide-react";
 import {
   getEmotionRecords, addEmotionRecord, deleteEmotionRecord, updateEmotionRecord,
   getRelationshipRecords, addRelationshipRecord, deleteRelationshipRecord, updateRelationshipRecord,
@@ -10,6 +10,7 @@ import {
   getRedemptions, addRedemption, getAllTimePoints, getTotalSpentPoints,
 } from "@/lib/supabase-store";
 import type { EmotionRecord, RelationshipRecord, GoalItem, GoalCollection, RewardItem, RedemptionRecord } from "@/lib/store-types";
+import { CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -77,6 +78,7 @@ export default function GoalsPage() {
   const [newGoalType, setNewGoalType] = useState<"short_term" | "long_term">("short_term");
   const [newGoalDate, setNewGoalDate] = useState("");
   const [newGoalCollection, setNewGoalCollection] = useState("");
+  const [newGoalLinkedHabit, setNewGoalLinkedHabit] = useState("");
 
   // Goal collection form
   const [showAddCollection, setShowAddCollection] = useState(false);
@@ -153,6 +155,16 @@ export default function GoalsPage() {
   };
 
   // Goal handlers
+  const allHabitItems = useMemo(() => {
+    const items: Array<{ id: string; name: string; module: string }> = [];
+    [...CORE_MODULES, ...BONUS_MODULES].forEach((mod) => {
+      mod.items.forEach((item) => {
+        items.push({ id: item.id, name: item.name, module: mod.name });
+      });
+    });
+    return items;
+  }, []);
+
   const handleAddGoal = async () => {
     if (!newGoalTitle.trim() || !user) return;
     await addGoalDb(user.id, {
@@ -163,8 +175,9 @@ export default function GoalsPage() {
       status: "not_started",
       points: newGoalType === "long_term" ? 20 : 10,
       collectionId: newGoalCollection || undefined,
+      linkedHabitId: newGoalLinkedHabit || undefined,
     });
-    setNewGoalTitle(""); setNewGoalDesc(""); setNewGoalDate(""); setNewGoalCollection(""); setShowAddGoal(false);
+    setNewGoalTitle(""); setNewGoalDesc(""); setNewGoalDate(""); setNewGoalCollection(""); setNewGoalLinkedHabit(""); setShowAddGoal(false);
     await loadData();
   };
 
@@ -215,34 +228,43 @@ export default function GoalsPage() {
   const shortTermGoals = uncategorizedGoals.filter((g) => g.type === "short_term");
   const longTermGoals = uncategorizedGoals.filter((g) => g.type === "long_term");
 
-  const renderGoalItem = (goal: GoalItem, iconColor = "text-primary") => (
-    <motion.div key={goal.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
-      <div className="flex items-start gap-3">
-        <Target className={cn("w-4 h-4 mt-0.5 shrink-0", iconColor)} />
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium">{goal.title}</h4>
-          {goal.description && <p className="text-xs text-muted-foreground mt-0.5">{goal.description}</p>}
-          <div className="flex items-center gap-2 mt-2">
-            <Select value={goal.status} onValueChange={(v) => updateGoalStatus(goal.id, v).then(loadData)}>
-              <SelectTrigger className="h-6 text-[10px] w-auto px-2">
-                <span className={cn("px-1.5 py-0.5 rounded-full text-[10px]", STATUS_COLORS[goal.status as keyof typeof STATUS_COLORS])}>
-                  {STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS]}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="not_started">未开始</SelectItem>
-                <SelectItem value="in_progress">进行中</SelectItem>
-                <SelectItem value="completed">已完成</SelectItem>
-              </SelectContent>
-            </Select>
-            {goal.targetDate && <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Calendar className="w-3 h-3" />{goal.targetDate}</span>}
-            <span className="text-[10px] text-primary">+{goal.points}分</span>
+  const renderGoalItem = (goal: GoalItem, iconColor = "text-primary") => {
+    const linkedHabit = goal.linkedHabitId ? allHabitItems.find((h) => h.id === goal.linkedHabitId) : null;
+    return (
+      <motion.div key={goal.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
+        <div className="flex items-start gap-3">
+          <Target className={cn("w-4 h-4 mt-0.5 shrink-0", iconColor)} />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-medium">{goal.title}</h4>
+            {goal.description && <p className="text-xs text-muted-foreground mt-0.5">{goal.description}</p>}
+            {linkedHabit && (
+              <div className="flex items-center gap-1 mt-1.5 text-[10px] text-primary bg-primary/5 rounded-full px-2 py-0.5 w-fit">
+                <Link2 className="w-3 h-3" />
+                <span>关联习惯：{linkedHabit.name}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-2">
+              <Select value={goal.status} onValueChange={(v) => updateGoalStatus(goal.id, v).then(loadData)}>
+                <SelectTrigger className="h-6 text-[10px] w-auto px-2">
+                  <span className={cn("px-1.5 py-0.5 rounded-full text-[10px]", STATUS_COLORS[goal.status as keyof typeof STATUS_COLORS])}>
+                    {STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS]}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not_started">未开始</SelectItem>
+                  <SelectItem value="in_progress">进行中</SelectItem>
+                  <SelectItem value="completed">已完成</SelectItem>
+                </SelectContent>
+              </Select>
+              {goal.targetDate && <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Calendar className="w-3 h-3" />{goal.targetDate}</span>}
+              <span className="text-[10px] text-primary">+{goal.points}分</span>
+            </div>
           </div>
+          <button onClick={() => deleteGoalDb(goal.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
-        <button onClick={() => deleteGoalDb(goal.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
@@ -435,6 +457,21 @@ export default function GoalsPage() {
                         </SelectContent>
                       </Select>
                     )}
+                    {/* Habit pairing */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1.5 block flex items-center gap-1">
+                        <Link2 className="w-3 h-3" /> 是否关联一个每日习惯？
+                      </label>
+                      <Select value={newGoalLinkedHabit} onValueChange={setNewGoalLinkedHabit}>
+                        <SelectTrigger><SelectValue placeholder="选择关联习惯（可选）" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">不关联</SelectItem>
+                          {allHabitItems.map((h) => (
+                            <SelectItem key={h.id} value={h.id}>{h.module} · {h.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex gap-2">
                       <Button onClick={handleAddGoal} size="sm">确认</Button>
                       <Button variant="ghost" size="sm" onClick={() => setShowAddGoal(false)}>取消</Button>

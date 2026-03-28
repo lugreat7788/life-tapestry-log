@@ -1,32 +1,66 @@
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { AnimatePresence } from "framer-motion";
 import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
-import { getDailyLog, getStreakDays, getAllTimePoints } from "@/lib/supabase-store";
+import { StreakRiskBanner, MilestoneBadge } from "@/components/CelebrationAnimation";
+import WeeklyReview from "@/components/WeeklyReview";
+import { getDailyLog, getStreakDays, getAllTimePoints, getAllLogs } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
+import { CORE_MODULES } from "@/lib/modules";
 import type { DailyLog } from "@/lib/store-types";
+
+const MILESTONE_KEY = "lifelog_milestone_shown";
+
+function getShownMilestones(): number[] {
+  try {
+    return JSON.parse(localStorage.getItem(MILESTONE_KEY) || "[]");
+  } catch { return []; }
+}
+
+function markMilestoneShown(days: number) {
+  const shown = getShownMilestones();
+  if (!shown.includes(days)) {
+    shown.push(days);
+    localStorage.setItem(MILESTONE_KEY, JSON.stringify(shown));
+  }
+}
 
 export default function HomePage() {
   const { user } = useAuth();
-  const { coreModules } = useModuleConfig();
+  const { coreModules, bonusModules } = useModuleConfig();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
   const [streakDays, setStreakDays] = useState(0);
   const [allTimePoints, setAllTimePoints] = useState(0);
+  const [allLogs, setAllLogs] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [showMilestone, setShowMilestone] = useState<number | null>(null);
 
   const loadLog = useCallback(async () => {
     if (!user) return;
-    const [data, streak, total] = await Promise.all([
+    const [data, streak, total, logs] = await Promise.all([
       getDailyLog(user.id),
       getStreakDays(user.id),
       getAllTimePoints(user.id),
+      getAllLogs(user.id),
     ]);
     setLog(data);
     setStreakDays(streak);
     setAllTimePoints(total);
+    setAllLogs(logs);
     setLoading(false);
+
+    // Check milestones
+    const milestones = [7, 30, 100];
+    const shown = getShownMilestones();
+    for (const m of milestones) {
+      if (streak >= m && !shown.includes(m)) {
+        setShowMilestone(m);
+        break;
+      }
+    }
   }, [user]);
 
   useEffect(() => {
@@ -48,6 +82,13 @@ export default function HomePage() {
   );
   const bonusPoints = 0;
 
+  // Calculate unfinished items for streak risk
+  const totalCoreItems = coreModules.reduce((s, m) => s + m.items.length, 0);
+  const completedCoreItems = coreModules.reduce(
+    (s, m) => s + m.items.filter((item) => log.entries[item.id]?.completed).length, 0
+  );
+  const unfinishedCount = totalCoreItems - completedCoreItems;
+
   if (loading) {
     return (
       <div className="px-5 pt-8 pb-4 max-w-lg mx-auto">
@@ -68,7 +109,32 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Streak milestone celebration */}
+      <AnimatePresence>
+        {showMilestone && (
+          <div className="mb-3">
+            <MilestoneBadge
+              days={showMilestone}
+              onClose={() => {
+                markMilestoneShown(showMilestone);
+                setShowMilestone(null);
+              }}
+            />
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Streak risk banner */}
+      <StreakRiskBanner streak={streakDays} todayScore={log.totalPoints} unfinishedCount={unfinishedCount} />
+
       <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} />
+
+      {/* Weekly review card */}
+      {Object.keys(allLogs).length >= 3 && (
+        <div className="mt-3">
+          <WeeklyReview allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
+        </div>
+      )}
 
       <h2 className="text-[9px] font-medium text-muted-foreground/60 mt-3 mb-2 uppercase tracking-[0.15em]">
         每日必修

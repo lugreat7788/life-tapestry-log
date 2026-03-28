@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
 import CheckinCard from "@/components/CheckinCard";
+import EVInsightPanel from "@/components/EVInsightPanel";
 import type { EmotionRecord, RelationshipRecord, GoalItem } from "@/lib/store-types";
 import {
   ResponsiveContainer,
@@ -610,6 +611,10 @@ export default function StatsPage() {
           </div>
         </div>
       )}
+
+      {/* EV Insight Panel */}
+      <EVInsightPanel allLogs={allLogs} modules={[...coreModules, ...bonusModules]} />
+
 
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">
         <h2 className="text-sm font-semibold text-foreground mb-3">本周积分</h2>
