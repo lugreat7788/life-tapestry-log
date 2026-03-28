@@ -155,6 +155,16 @@ export default function GoalsPage() {
   };
 
   // Goal handlers
+  const allHabitItems = useMemo(() => {
+    const items: Array<{ id: string; name: string; module: string }> = [];
+    [...CORE_MODULES, ...BONUS_MODULES].forEach((mod) => {
+      mod.items.forEach((item) => {
+        items.push({ id: item.id, name: item.name, module: mod.name });
+      });
+    });
+    return items;
+  }, []);
+
   const handleAddGoal = async () => {
     if (!newGoalTitle.trim() || !user) return;
     await addGoalDb(user.id, {
@@ -165,8 +175,9 @@ export default function GoalsPage() {
       status: "not_started",
       points: newGoalType === "long_term" ? 20 : 10,
       collectionId: newGoalCollection || undefined,
+      linkedHabitId: newGoalLinkedHabit || undefined,
     });
-    setNewGoalTitle(""); setNewGoalDesc(""); setNewGoalDate(""); setNewGoalCollection(""); setShowAddGoal(false);
+    setNewGoalTitle(""); setNewGoalDesc(""); setNewGoalDate(""); setNewGoalCollection(""); setNewGoalLinkedHabit(""); setShowAddGoal(false);
     await loadData();
   };
 
