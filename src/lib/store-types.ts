@@ -2,6 +2,7 @@ export interface LogEntry {
   itemId: string;
   moduleKey: string;
   completed: boolean;
+  completionType?: "full" | "minimum";
   notes: string;
   timestamp: string;
   sleepBedtime?: string;
@@ -36,6 +37,7 @@ export interface GoalItem {
   status: "not_started" | "in_progress" | "completed";
   points: number;
   collectionId?: string;
+  linkedHabitId?: string;
   createdAt: string;
 }
 
@@ -94,7 +96,7 @@ export interface RelationshipRecord {
 export interface ModuleConfig {
   modules: Record<string, {
     name?: string;
-    items: Array<{ id: string; name: string; points: number }>;
+    items: Array<{ id: string; name: string; points: number; minPoints?: number }>;
   }>;
   emotionTypes?: string[];
   relationshipPersons?: string[];

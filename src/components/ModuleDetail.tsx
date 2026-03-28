@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText } from "lucide-react";
+import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText, Sprout } from "lucide-react";
 import { getModuleMaxPoints } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
-import { getDailyLog, toggleEntry, updateEntryNotes, updateSleepTime } from "@/lib/supabase-store";
+import { getDailyLog, toggleEntry, toggleEntryMinimum, updateEntryNotes, updateSleepTime } from "@/lib/supabase-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { FloatingPoints, FullCelebration } from "@/components/CelebrationAnimation";
+import { CORE_MODULES } from "@/lib/modules";
 import {
   Drawer,
   DrawerContent,
@@ -29,7 +31,7 @@ const DIET_ITEM_IDS = ["diet_breakfast", "diet_lunch", "diet_dinner"];
 
 export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const { user } = useAuth();
-  const { getModule } = useModuleConfig();
+  const { getModule, config } = useModuleConfig();
   const module = getModule(moduleKey)!;
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
   const [photoUrls, setPhotoUrls] = useState<Record<string, string[]>>({});
@@ -39,6 +41,11 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const generalFileInputRef = useRef<HTMLInputElement>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  
+  // Celebration state
+  const [floatingPoints, setFloatingPoints] = useState<Array<{ id: number; points: number; isMinimum: boolean; x: number; y: number }>>([]);
+  const [showFullCelebration, setShowFullCelebration] = useState(false);
+  const floatingIdRef = useRef(0);
 
   const loadLog = useCallback(async () => {
     if (!user) return;
@@ -67,15 +74,62 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
 
   if (!module) return null;
 
-  const earnedPoints = module.items.reduce(
-    (sum, item) => sum + (log.entries[item.id]?.completed ? item.points : 0),
-    0
-  );
+  const getItemMinPoints = (itemId: string): number | null => {
+    const modCfg = config?.modules?.[moduleKey];
+    const itemCfg = modCfg?.items?.find((i) => i.id === itemId);
+    return (itemCfg as any)?.minPoints ?? null;
+  };
 
-  const handleToggle = async (itemId: string, points: number) => {
+  const earnedPoints = module.items.reduce((sum, item) => {
+    const entry = log.entries[item.id];
+    if (!entry?.completed) return sum;
+    if (entry.completionType === "minimum") {
+      const minPts = getItemMinPoints(item.id);
+      return sum + (minPts ?? Math.floor(item.points * 0.5));
+    }
+    return sum + item.points;
+  }, 0);
+
+  const triggerFloating = (points: number, isMinimum: boolean, event: React.MouseEvent) => {
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const id = ++floatingIdRef.current;
+    setFloatingPoints((prev) => [...prev, { id, points, isMinimum, x: rect.left + rect.width / 2, y: rect.top }]);
+  };
+
+  const checkFullCelebration = async () => {
+    // Check if all core items are now complete
+    if (!date || date.toDateString() === new Date().toDateString()) {
+      const updatedLog = await getDailyLog(user!.id, date);
+      const coreComplete = CORE_MODULES.every((mod) =>
+        mod.items.every((item) => updatedLog.entries[item.id]?.completed)
+      );
+      if (coreComplete) {
+        setShowFullCelebration(true);
+      }
+    }
+  };
+
+  const handleToggle = async (itemId: string, points: number, event: React.MouseEvent) => {
     if (!user) return;
+    const wasCompleted = log.entries[itemId]?.completed;
     await toggleEntry(user.id, moduleKey, itemId, points, date);
     await loadLog();
+    if (!wasCompleted) {
+      triggerFloating(points, false, event);
+      await checkFullCelebration();
+    }
+  };
+
+  const handleMinimumComplete = async (itemId: string, points: number, event: React.MouseEvent) => {
+    if (!user) return;
+    const minPts = getItemMinPoints(itemId) ?? Math.floor(points * 0.5);
+    const wasCompleted = log.entries[itemId]?.completed;
+    await toggleEntryMinimum(user.id, moduleKey, itemId, minPts, date);
+    await loadLog();
+    if (!wasCompleted) {
+      triggerFloating(minPts, true, event);
+      await checkFullCelebration();
+    }
   };
 
   const handleNotes = async (itemId: string, notes: string) => {
@@ -260,42 +314,73 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
         }}
       />
 
+      {/* Floating points animations */}
+      {floatingPoints.map((fp) => (
+        <FloatingPoints
+          key={fp.id}
+          points={fp.points}
+          isMinimum={fp.isMinimum}
+          x={fp.x}
+          y={fp.y}
+          onComplete={() => setFloatingPoints((prev) => prev.filter((p) => p.id !== fp.id))}
+        />
+      ))}
+
+      {/* Full celebration overlay */}
+      <FullCelebration
+        show={showFullCelebration}
+        totalScore={log.totalPoints}
+        onClose={() => setShowFullCelebration(false)}
+      />
+
       <div className="space-y-3">
         {module.items.map((item) => {
           const entry = log.entries[item.id];
           const isCompleted = entry?.completed;
+          const isMinimum = entry?.completionType === "minimum";
           const photos = photoUrls[item.id] || [];
           const files = fileUrls[item.id] || [];
+          const minPoints = getItemMinPoints(item.id);
+          const hasMinOption = minPoints !== null && minPoints > 0;
 
           return (
             <Drawer key={item.id}>
               <div
                 className={cn(
                   "bg-card rounded-xl shadow-card overflow-hidden transition-all duration-200",
-                  isCompleted && "ring-1 ring-primary/20"
+                  isCompleted && !isMinimum && "ring-1 ring-primary/20",
+                  isCompleted && isMinimum && "ring-1 ring-amber-500/20"
                 )}
               >
                 <div className="flex items-center p-4 gap-3">
+                  {/* Full completion button */}
                   <button
-                    onClick={() => handleToggle(item.id, item.points)}
+                    onClick={(e) => handleToggle(item.id, item.points, e)}
                     className={cn(
                       "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-200 shrink-0",
-                      isCompleted
+                      isCompleted && !isMinimum
                         ? "bg-primary border-primary"
+                        : isCompleted && isMinimum
+                        ? "bg-amber-500 border-amber-500"
                         : "border-muted-foreground/30 hover:border-primary/50"
                     )}
                   >
                     <AnimatePresence>
-                      {isCompleted && (
+                      {isCompleted && !isMinimum && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
                           <Check className="w-4 h-4 text-primary-foreground" />
+                        </motion.div>
+                      )}
+                      {isCompleted && isMinimum && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                          <Sprout className="w-3.5 h-3.5 text-white" />
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    <p className={cn("font-medium text-sm transition-all duration-200", isCompleted && "line-through text-muted-foreground")}>
+                    <p className={cn("font-medium text-sm transition-all duration-200", isCompleted && !isMinimum && "line-through text-muted-foreground")}>
                       {item.name}
                     </p>
                     {entry?.notes && (
@@ -303,9 +388,24 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                     )}
                   </div>
 
-                  <span className={cn("text-xs font-medium px-2 py-1 rounded-full", module.bgClass, module.fgClass)}>
-                    +{item.points}分
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {/* Minimum completion button */}
+                    {hasMinOption && !isCompleted && (
+                      <button
+                        onClick={(e) => handleMinimumComplete(item.id, item.points, e)}
+                        className="text-[10px] text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-full flex items-center gap-0.5 transition-colors"
+                        title="最小完成"
+                      >
+                        🌱 +{minPoints}
+                      </button>
+                    )}
+
+                    <span className={cn("text-xs font-medium px-2 py-1 rounded-full", 
+                      isMinimum ? "bg-amber-500/10 text-amber-600" : cn(module.bgClass, module.fgClass)
+                    )}>
+                      {isMinimum ? `🌱+${minPoints || Math.floor(item.points * 0.5)}分` : `+${item.points}分`}
+                    </span>
+                  </div>
 
                   {showUploadButtons(item.id) && (
                     <>
