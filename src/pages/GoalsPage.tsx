@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Target, Calendar, Heart, Brain, Gift, ShoppingBag, FolderPlus, ChevronDown, ChevronRight, Edit2, Check } from "lucide-react";
+import { Plus, Trash2, Target, Calendar, Heart, Brain, Gift, ShoppingBag, FolderPlus, ChevronDown, ChevronRight, Edit2, Check, Link2 } from "lucide-react";
 import {
   getEmotionRecords, addEmotionRecord, deleteEmotionRecord, updateEmotionRecord,
   getRelationshipRecords, addRelationshipRecord, deleteRelationshipRecord, updateRelationshipRecord,
