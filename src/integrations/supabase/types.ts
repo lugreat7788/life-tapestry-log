@@ -160,6 +160,7 @@ export type Database = {
       log_entries: {
         Row: {
           completed: boolean
+          completion_type: string
           created_at: string
           daily_log_id: string
           file_urls: string[] | null
@@ -175,6 +176,7 @@ export type Database = {
         }
         Insert: {
           completed?: boolean
+          completion_type?: string
           created_at?: string
           daily_log_id: string
           file_urls?: string[] | null
@@ -190,6 +192,7 @@ export type Database = {
         }
         Update: {
           completed?: boolean
+          completion_type?: string
           created_at?: string
           daily_log_id?: string
           file_urls?: string[] | null

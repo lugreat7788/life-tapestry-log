@@ -1,0 +1,1 @@
+ALTER TABLE public.log_entries ADD COLUMN IF NOT EXISTS completion_type text NOT NULL DEFAULT 'full';
