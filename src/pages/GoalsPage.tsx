@@ -78,6 +78,7 @@ export default function GoalsPage() {
   const [newGoalType, setNewGoalType] = useState<"short_term" | "long_term">("short_term");
   const [newGoalDate, setNewGoalDate] = useState("");
   const [newGoalCollection, setNewGoalCollection] = useState("");
+  const [newGoalLinkedHabit, setNewGoalLinkedHabit] = useState("");
 
   // Goal collection form
   const [showAddCollection, setShowAddCollection] = useState(false);
