@@ -612,6 +612,10 @@ export default function StatsPage() {
         </div>
       )}
 
+      {/* EV Insight Panel */}
+      <EVInsightPanel allLogs={allLogs} modules={[...coreModules, ...bonusModules]} />
+
+
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">
         <h2 className="text-sm font-semibold text-foreground mb-3">本周积分</h2>
         <div className="h-48">
