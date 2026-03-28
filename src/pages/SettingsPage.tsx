@@ -213,6 +213,22 @@ export default function SettingsPage() {
                 <Input type="number" className="h-8 w-16 text-sm text-center" defaultValue={item.points} min={0} onBlur={(e) => handleChangePoints(mod.key, idx, parseInt(e.target.value) || 0)} />
                 <span className="text-xs text-muted-foreground">分</span>
               </div>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  className="h-8 w-14 text-sm text-center"
+                  placeholder="最小"
+                  defaultValue={(item as any).minPoints || ""}
+                  min={0}
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    const cfg = ensureConfig();
+                    (cfg.modules[mod.key].items[idx] as any).minPoints = val;
+                    updateConfig(cfg);
+                  }}
+                />
+                <span className="text-[9px] text-muted-foreground leading-tight">🌱</span>
+              </div>
               <button onClick={() => handleDeleteItem(mod.key, idx)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           ))}
