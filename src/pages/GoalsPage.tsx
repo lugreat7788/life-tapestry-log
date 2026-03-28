@@ -228,34 +228,43 @@ export default function GoalsPage() {
   const shortTermGoals = uncategorizedGoals.filter((g) => g.type === "short_term");
   const longTermGoals = uncategorizedGoals.filter((g) => g.type === "long_term");
 
-  const renderGoalItem = (goal: GoalItem, iconColor = "text-primary") => (
-    <motion.div key={goal.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
-      <div className="flex items-start gap-3">
-        <Target className={cn("w-4 h-4 mt-0.5 shrink-0", iconColor)} />
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium">{goal.title}</h4>
-          {goal.description && <p className="text-xs text-muted-foreground mt-0.5">{goal.description}</p>}
-          <div className="flex items-center gap-2 mt-2">
-            <Select value={goal.status} onValueChange={(v) => updateGoalStatus(goal.id, v).then(loadData)}>
-              <SelectTrigger className="h-6 text-[10px] w-auto px-2">
-                <span className={cn("px-1.5 py-0.5 rounded-full text-[10px]", STATUS_COLORS[goal.status as keyof typeof STATUS_COLORS])}>
-                  {STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS]}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="not_started">未开始</SelectItem>
-                <SelectItem value="in_progress">进行中</SelectItem>
-                <SelectItem value="completed">已完成</SelectItem>
-              </SelectContent>
-            </Select>
-            {goal.targetDate && <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Calendar className="w-3 h-3" />{goal.targetDate}</span>}
-            <span className="text-[10px] text-primary">+{goal.points}分</span>
+  const renderGoalItem = (goal: GoalItem, iconColor = "text-primary") => {
+    const linkedHabit = goal.linkedHabitId ? allHabitItems.find((h) => h.id === goal.linkedHabitId) : null;
+    return (
+      <motion.div key={goal.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
+        <div className="flex items-start gap-3">
+          <Target className={cn("w-4 h-4 mt-0.5 shrink-0", iconColor)} />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-medium">{goal.title}</h4>
+            {goal.description && <p className="text-xs text-muted-foreground mt-0.5">{goal.description}</p>}
+            {linkedHabit && (
+              <div className="flex items-center gap-1 mt-1.5 text-[10px] text-primary bg-primary/5 rounded-full px-2 py-0.5 w-fit">
+                <Link2 className="w-3 h-3" />
+                <span>关联习惯：{linkedHabit.name}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-2">
+              <Select value={goal.status} onValueChange={(v) => updateGoalStatus(goal.id, v).then(loadData)}>
+                <SelectTrigger className="h-6 text-[10px] w-auto px-2">
+                  <span className={cn("px-1.5 py-0.5 rounded-full text-[10px]", STATUS_COLORS[goal.status as keyof typeof STATUS_COLORS])}>
+                    {STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS]}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not_started">未开始</SelectItem>
+                  <SelectItem value="in_progress">进行中</SelectItem>
+                  <SelectItem value="completed">已完成</SelectItem>
+                </SelectContent>
+              </Select>
+              {goal.targetDate && <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Calendar className="w-3 h-3" />{goal.targetDate}</span>}
+              <span className="text-[10px] text-primary">+{goal.points}分</span>
+            </div>
           </div>
+          <button onClick={() => deleteGoalDb(goal.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
-        <button onClick={() => deleteGoalDb(goal.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
