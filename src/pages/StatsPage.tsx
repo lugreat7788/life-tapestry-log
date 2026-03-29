@@ -170,19 +170,21 @@ export default function StatsPage() {
       });
     });
 
-    // Search emotion records
+    // Search emotion/awareness records
     emotionRecords.forEach((r) => {
       const match = r.emotionType.toLowerCase().includes(q) ||
+        r.person.toLowerCase().includes(q) ||
         r.trigger.toLowerCase().includes(q) ||
         r.thoughts.toLowerCase().includes(q) ||
         r.copingStrategy.toLowerCase().includes(q) ||
-        "情绪".includes(q);
+        r.reflection.toLowerCase().includes(q) ||
+        "觉察".includes(q) || "情绪".includes(q);
       if (match) {
         results.push({
           date: r.date,
-          title: r.emotionType,
-          category: "情绪记录",
-          detail: [r.trigger, r.thoughts, r.copingStrategy].filter(Boolean).join(" · "),
+          title: `${r.person} · ${r.emotionType}`,
+          category: "觉察记录",
+          detail: [r.trigger, r.thoughts, r.copingStrategy, r.reflection].filter(Boolean).join(" · "),
         });
       }
     });

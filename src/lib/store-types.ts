@@ -73,11 +73,13 @@ export interface EmotionRecord {
   id: string;
   userId: string;
   date: string;
+  person: string;
   emotionType: string;
   intensity: number;
   trigger: string;
   thoughts: string;
   copingStrategy: string;
+  reflection: string;
   createdAt: string;
 }
 
