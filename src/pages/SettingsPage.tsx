@@ -38,7 +38,7 @@ export default function SettingsPage() {
   const [showBonusSettings, setShowBonusSettings] = useState(false);
   const [showGoalSettings, setShowGoalSettings] = useState(false);
   const [showEmotionSettings, setShowEmotionSettings] = useState(false);
-  const [showRelationSettings, setShowRelationSettings] = useState(false);
+  const [_showRelationSettings, _setShowRelationSettings] = useState(false); // kept for hook order
 
   useEffect(() => {
     if (!user) return;
