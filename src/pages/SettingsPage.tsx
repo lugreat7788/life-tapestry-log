@@ -297,57 +297,52 @@ export default function SettingsPage() {
 
       <div className="mb-4">
         <button onClick={() => setShowEmotionSettings(!showEmotionSettings)} className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-          <span>🧠 情绪类型管理</span>
+          <span>👁️ 觉察设置（情绪类型 & 对象管理）</span>
           <ChevronDown className={cn("w-4 h-4 transition-transform", showEmotionSettings && "rotate-180")} />
         </button>
         {showEmotionSettings && (
-          <div className="bg-card rounded-xl shadow-card p-4 space-y-2">
-            <div className="flex flex-wrap gap-1.5">
-              {(config?.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]).map((type, idx) => (
-                <div key={idx} className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-1 text-xs">
-                  <span>{type}</span>
-                  <button onClick={() => {
-                    const cfg = ensureConfig();
-                    const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"];
-                    types.splice(idx, 1);
-                    cfg.emotionTypes = types;
-                    updateConfig(cfg);
-                  }} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
-                </div>
-              ))}
+          <div className="bg-card rounded-xl shadow-card p-4 space-y-4">
+            <div>
+              <label className="text-xs font-medium text-foreground mb-1.5 block">情绪类型</label>
+              <div className="flex flex-wrap gap-1.5">
+                {(config?.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]).map((type, idx) => (
+                  <div key={idx} className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-1 text-xs">
+                    <span>{type}</span>
+                    <button onClick={() => {
+                      const cfg = ensureConfig();
+                      const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"];
+                      types.splice(idx, 1);
+                      cfg.emotionTypes = types;
+                      updateConfig(cfg);
+                    }} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Input className="h-8 text-sm" placeholder="添加情绪类型（如：😅 尴尬）" value={newEmotionType} onChange={(e) => setNewEmotionType(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newEmotionType.trim()) { const cfg = ensureConfig(); const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]; types.push(newEmotionType.trim()); cfg.emotionTypes = types; updateConfig(cfg); setNewEmotionType(""); }}} />
+                <Button size="sm" variant="outline" className="h-8" onClick={() => { if (!newEmotionType.trim()) return; const cfg = ensureConfig(); const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]; types.push(newEmotionType.trim()); cfg.emotionTypes = types; updateConfig(cfg); setNewEmotionType(""); }}><Plus className="w-3.5 h-3.5" /></Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Input className="h-8 text-sm" placeholder="添加情绪类型（如：😅 尴尬）" value={newEmotionType} onChange={(e) => setNewEmotionType(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newEmotionType.trim()) { const cfg = ensureConfig(); const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]; types.push(newEmotionType.trim()); cfg.emotionTypes = types; updateConfig(cfg); setNewEmotionType(""); }}} />
-              <Button size="sm" variant="outline" className="h-8" onClick={() => { if (!newEmotionType.trim()) return; const cfg = ensureConfig(); const types = cfg.emotionTypes || ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"]; types.push(newEmotionType.trim()); cfg.emotionTypes = types; updateConfig(cfg); setNewEmotionType(""); }}><Plus className="w-3.5 h-3.5" /></Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="mb-4">
-        <button onClick={() => setShowRelationSettings(!showRelationSettings)} className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-          <span>❤️ 关系对象管理</span>
-          <ChevronDown className={cn("w-4 h-4 transition-transform", showRelationSettings && "rotate-180")} />
-        </button>
-        {showRelationSettings && (
-          <div className="bg-card rounded-xl shadow-card p-4 space-y-2">
-            <div className="flex flex-wrap gap-1.5">
-              {(config?.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]).map((person, idx) => (
-                <div key={idx} className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-1 text-xs">
-                  <span>{person}</span>
-                  <button onClick={() => {
-                    const cfg = ensureConfig();
-                    const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"];
-                    persons.splice(idx, 1);
-                    cfg.relationshipPersons = persons;
-                    updateConfig(cfg);
-                  }} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input className="h-8 text-sm" placeholder="添加关系对象" value={newRelationPerson} onChange={(e) => setNewRelationPerson(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newRelationPerson.trim()) { const cfg = ensureConfig(); const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]; persons.push(newRelationPerson.trim()); cfg.relationshipPersons = persons; updateConfig(cfg); setNewRelationPerson(""); }}} />
-              <Button size="sm" variant="outline" className="h-8" onClick={() => { if (!newRelationPerson.trim()) return; const cfg = ensureConfig(); const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]; persons.push(newRelationPerson.trim()); cfg.relationshipPersons = persons; updateConfig(cfg); setNewRelationPerson(""); }}><Plus className="w-3.5 h-3.5" /></Button>
+            <div>
+              <label className="text-xs font-medium text-foreground mb-1.5 block">觉察对象（"自己"为默认，无需添加）</label>
+              <div className="flex flex-wrap gap-1.5">
+                {(config?.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]).map((person, idx) => (
+                  <div key={idx} className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-1 text-xs">
+                    <span>{person}</span>
+                    <button onClick={() => {
+                      const cfg = ensureConfig();
+                      const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"];
+                      persons.splice(idx, 1);
+                      cfg.relationshipPersons = persons;
+                      updateConfig(cfg);
+                    }} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Input className="h-8 text-sm" placeholder="添加觉察对象" value={newRelationPerson} onChange={(e) => setNewRelationPerson(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newRelationPerson.trim()) { const cfg = ensureConfig(); const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]; persons.push(newRelationPerson.trim()); cfg.relationshipPersons = persons; updateConfig(cfg); setNewRelationPerson(""); }}} />
+                <Button size="sm" variant="outline" className="h-8" onClick={() => { if (!newRelationPerson.trim()) return; const cfg = ensureConfig(); const persons = cfg.relationshipPersons || ["伴侣", "家人", "朋友", "同事"]; persons.push(newRelationPerson.trim()); cfg.relationshipPersons = persons; updateConfig(cfg); setNewRelationPerson(""); }}><Plus className="w-3.5 h-3.5" /></Button>
+              </div>
             </div>
           </div>
         )}
