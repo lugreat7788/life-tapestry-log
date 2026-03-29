@@ -533,11 +533,13 @@ export async function addEmotionRecord(userId: string, record: Omit<EmotionRecor
 
 export async function updateEmotionRecord(id: string, updates: Partial<EmotionRecord>) {
   const mapped: any = {};
+  if (updates.person !== undefined) mapped.person = updates.person;
   if (updates.emotionType !== undefined) mapped.emotion_type = updates.emotionType;
   if (updates.intensity !== undefined) mapped.intensity = updates.intensity;
   if (updates.trigger !== undefined) mapped.trigger = updates.trigger;
   if (updates.thoughts !== undefined) mapped.thoughts = updates.thoughts;
   if (updates.copingStrategy !== undefined) mapped.coping_strategy = updates.copingStrategy;
+  if (updates.reflection !== undefined) mapped.reflection = updates.reflection;
   await supabase.from("emotion_records").update(mapped).eq("id", id);
 }
 
