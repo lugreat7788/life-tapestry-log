@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Target, Calendar, Heart, Brain, Gift, ShoppingBag, FolderPlus, ChevronDown, ChevronRight, Edit2, Check, Link2 } from "lucide-react";
+import { Plus, Trash2, Target, Calendar, Gift, ShoppingBag, FolderPlus, ChevronDown, ChevronRight, Edit2, Check, Link2, Search, X, Eye, Filter } from "lucide-react";
 import {
   getEmotionRecords, addEmotionRecord, deleteEmotionRecord, updateEmotionRecord,
-  getRelationshipRecords, addRelationshipRecord, deleteRelationshipRecord, updateRelationshipRecord,
+  getRelationshipRecords, deleteRelationshipRecord,
   getGoals, addGoal as addGoalDb, updateGoalStatus, deleteGoal as deleteGoalDb,
   getGoalCollections, addGoalCollection, renameGoalCollection, deleteGoalCollection,
   getRewards, addReward, deleteReward,
@@ -26,14 +26,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 
 const DEFAULT_EMOTIONS = ["😊 开心", "😢 难过", "😠 愤怒", "😰 焦虑", "😌 平静", "🤔 困惑", "😤 烦躁", "🥰 幸福", "😔 失落", "💪 自信"];
-const DEFAULT_PERSONS = ["伴侣", "家人", "朋友", "同事"];
-
-const RELATION_STATUS_LABELS = { unresolved: "未解决", in_progress: "处理中", resolved: "已解决" };
-const RELATION_STATUS_COLORS = {
-  unresolved: "bg-destructive/10 text-destructive",
-  in_progress: "bg-amber-500/10 text-amber-600",
-  resolved: "bg-primary/10 text-primary",
-};
+const DEFAULT_PERSONS = ["自己", "伴侣", "家人", "朋友", "同事"];
 
 const STATUS_LABELS = { not_started: "未开始", in_progress: "进行中", completed: "已完成" };
 const STATUS_COLORS = {
@@ -46,9 +39,9 @@ export default function GoalsPage() {
   const { user } = useAuth();
   const { config } = useModuleConfig();
   const emotionTypes = config?.emotionTypes || DEFAULT_EMOTIONS;
-  const personList = config?.relationshipPersons || DEFAULT_PERSONS;
-  const [emotions, setEmotions] = useState<EmotionRecord[]>([]);
-  const [relationships, setRelationships] = useState<RelationshipRecord[]>([]);
+  const personList = config?.relationshipPersons ? ["自己", ...config.relationshipPersons.filter(p => p !== "自己")] : DEFAULT_PERSONS;
+  const [awarenessRecords, setAwarenessRecords] = useState<EmotionRecord[]>([]);
+  const [legacyRelationships, setLegacyRelationships] = useState<RelationshipRecord[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [goalCollections, setGoalCollections] = useState<GoalCollection[]>([]);
   const [rewards, setRewards] = useState<RewardItem[]>([]);
@@ -56,20 +49,19 @@ export default function GoalsPage() {
   const [totalPoints, setTotalPoints] = useState(0);
   const [spentPoints, setSpentPoints] = useState(0);
 
-  // Emotion form
-  const [showAddEmotion, setShowAddEmotion] = useState(false);
+  // Awareness form
+  const [showAddAwareness, setShowAddAwareness] = useState(false);
+  const [newPerson, setNewPerson] = useState("自己");
   const [newEmotionType, setNewEmotionType] = useState(emotionTypes[0]);
   const [newIntensity, setNewIntensity] = useState(5);
   const [newTrigger, setNewTrigger] = useState("");
   const [newThoughts, setNewThoughts] = useState("");
   const [newCoping, setNewCoping] = useState("");
-
-  // Relationship form
-  const [showAddRelation, setShowAddRelation] = useState(false);
-  const [newPerson, setNewPerson] = useState("");
-  const [newProblem, setNewProblem] = useState("");
-  const [newSolution, setNewSolution] = useState("");
   const [newReflection, setNewReflection] = useState("");
+
+  // Awareness search & filter
+  const [awarenessSearch, setAwarenessSearch] = useState("");
+  const [awarenessFilter, setAwarenessFilter] = useState<string>("all"); // "all" | person name
 
   // Goal form
   const [showAddGoal, setShowAddGoal] = useState(false);
@@ -106,8 +98,8 @@ export default function GoalsPage() {
       getAllTimePoints(user.id),
       getTotalSpentPoints(user.id),
     ]);
-    setEmotions(e);
-    setRelationships(r);
+    setAwarenessRecords(e);
+    setLegacyRelationships(r);
     setGoals(g);
     setGoalCollections(gc);
     setRewards(rw);
@@ -119,40 +111,48 @@ export default function GoalsPage() {
 
   useEffect(() => { loadData(); }, [user]);
 
-  // Emotion handlers
-  const handleAddEmotion = async () => {
+  // Awareness handlers
+  const handleAddAwareness = async () => {
     if (!user) return;
     await addEmotionRecord(user.id, {
       date: format(new Date(), "yyyy-MM-dd"),
+      person: newPerson,
       emotionType: newEmotionType,
       intensity: newIntensity,
       trigger: newTrigger,
       thoughts: newThoughts,
       copingStrategy: newCoping,
-    });
-    setNewTrigger(""); setNewThoughts(""); setNewCoping(""); setNewIntensity(5); setShowAddEmotion(false);
-    await loadData();
-  };
-
-  // Relationship handlers
-  const handleAddRelation = async () => {
-    if (!newProblem.trim() || !user) return;
-    await addRelationshipRecord(user.id, {
-      date: format(new Date(), "yyyy-MM-dd"),
-      person: newPerson,
-      problem: newProblem,
-      solution: newSolution,
       reflection: newReflection,
-      status: "unresolved",
     });
-    setNewPerson(""); setNewProblem(""); setNewSolution(""); setNewReflection(""); setShowAddRelation(false);
+    setNewPerson("自己"); setNewTrigger(""); setNewThoughts(""); setNewCoping(""); setNewReflection(""); setNewIntensity(5); setShowAddAwareness(false);
     await loadData();
   };
 
-  const handleRelationStatus = async (id: string, status: string) => {
-    await updateRelationshipRecord(id, { status: status as any });
-    await loadData();
-  };
+  // Filtered awareness records
+  const filteredRecords = useMemo(() => {
+    let records = awarenessRecords;
+    if (awarenessFilter !== "all") {
+      records = records.filter(r => r.person === awarenessFilter);
+    }
+    if (awarenessSearch.trim()) {
+      const q = awarenessSearch.toLowerCase();
+      records = records.filter(r =>
+        r.emotionType.toLowerCase().includes(q) ||
+        r.trigger.toLowerCase().includes(q) ||
+        r.thoughts.toLowerCase().includes(q) ||
+        r.copingStrategy.toLowerCase().includes(q) ||
+        r.reflection.toLowerCase().includes(q) ||
+        r.person.toLowerCase().includes(q)
+      );
+    }
+    return records;
+  }, [awarenessRecords, awarenessFilter, awarenessSearch]);
+
+  // Unique persons from records for filter
+  const uniquePersons = useMemo(() => {
+    const persons = new Set(awarenessRecords.map(r => r.person));
+    return Array.from(persons);
+  }, [awarenessRecords]);
 
   // Goal handlers
   const allHabitItems = useMemo(() => {
@@ -270,61 +270,102 @@ export default function GoalsPage() {
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
       <h1 className="text-2xl font-display font-bold text-foreground mb-5">心灵记录</h1>
 
-      <Tabs defaultValue="emotion" className="w-full">
+      <Tabs defaultValue="awareness" className="w-full">
         <TabsList className="w-full">
-          <TabsTrigger value="emotion" className="flex-1 gap-1"><Brain className="w-3.5 h-3.5" />情绪</TabsTrigger>
-          <TabsTrigger value="relationship" className="flex-1 gap-1"><Heart className="w-3.5 h-3.5" />关系</TabsTrigger>
+          <TabsTrigger value="awareness" className="flex-1 gap-1"><Eye className="w-3.5 h-3.5" />觉察</TabsTrigger>
           <TabsTrigger value="goals" className="flex-1 gap-1"><Target className="w-3.5 h-3.5" />目标</TabsTrigger>
           <TabsTrigger value="redeem" className="flex-1 gap-1"><Gift className="w-3.5 h-3.5" />兑换</TabsTrigger>
         </TabsList>
 
-        {/* ─── 情绪记录 ─── */}
-        <TabsContent value="emotion">
+        {/* ─── 觉察记录 ─── */}
+        <TabsContent value="awareness">
           <div className="mt-4">
-            <div className="flex justify-end mb-3">
-              <Button size="sm" onClick={() => setShowAddEmotion(!showAddEmotion)} className="rounded-full">
-                <Plus className="w-4 h-4 mr-1" />记录情绪
+            {/* Search & Filter Bar */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="搜索觉察记录..."
+                  value={awarenessSearch}
+                  onChange={(e) => setAwarenessSearch(e.target.value)}
+                  className="pl-8 h-8 text-xs rounded-full"
+                />
+                {awarenessSearch && (
+                  <button onClick={() => setAwarenessSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <Select value={awarenessFilter} onValueChange={setAwarenessFilter}>
+                <SelectTrigger className="h-8 w-auto min-w-[72px] text-xs rounded-full px-2.5">
+                  <Filter className="w-3 h-3 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  {uniquePersons.map(p => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={() => setShowAddAwareness(!showAddAwareness)} className="rounded-full h-8 px-3">
+                <Plus className="w-4 h-4 mr-1" />记录
               </Button>
             </div>
 
             <AnimatePresence>
-              {showAddEmotion && (
+              {showAddAwareness && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
                   <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
+                    {/* Person selector */}
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1.5 block">情绪类型</label>
+                      <label className="text-xs text-muted-foreground mb-1.5 block">觉察对象</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {personList.map((p) => (
+                          <button key={p} onClick={() => setNewPerson(p)} className={cn("px-2.5 py-1 rounded-full text-xs transition-colors", newPerson === p ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent")}>{p}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Emotion type */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1.5 block">情绪状态</label>
                       <div className="flex flex-wrap gap-1.5">
                         {emotionTypes.map((e) => (
                           <button key={e} onClick={() => setNewEmotionType(e)} className={cn("px-2.5 py-1 rounded-full text-xs transition-colors", newEmotionType === e ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent")}>{e}</button>
                         ))}
                       </div>
                     </div>
+                    {/* Intensity */}
                     <div>
                       <label className="text-xs text-muted-foreground mb-1.5 block">强度: {newIntensity}/10</label>
                       <Slider value={[newIntensity]} onValueChange={(v) => setNewIntensity(v[0])} min={1} max={10} step={1} className="w-full" />
                     </div>
-                    <Textarea placeholder="触发事件（什么引起了这个情绪？）" value={newTrigger} onChange={(e) => setNewTrigger(e.target.value)} className="min-h-[60px] resize-none" />
+                    <Textarea placeholder="触发事件（什么引起了这个状态？）" value={newTrigger} onChange={(e) => setNewTrigger(e.target.value)} className="min-h-[60px] resize-none" />
                     <Textarea placeholder="内心想法（当时你在想什么？）" value={newThoughts} onChange={(e) => setNewThoughts(e.target.value)} className="min-h-[60px] resize-none" />
                     <Textarea placeholder="应对方式（你是怎么处理的？）" value={newCoping} onChange={(e) => setNewCoping(e.target.value)} className="min-h-[60px] resize-none" />
+                    <Textarea placeholder="反思与收获（你学到了什么？）" value={newReflection} onChange={(e) => setNewReflection(e.target.value)} className="min-h-[60px] resize-none" />
                     <div className="flex gap-2">
-                      <Button onClick={handleAddEmotion} size="sm">保存</Button>
-                      <Button variant="ghost" size="sm" onClick={() => setShowAddEmotion(false)}>取消</Button>
+                      <Button onClick={handleAddAwareness} size="sm">保存</Button>
+                      <Button variant="ghost" size="sm" onClick={() => setShowAddAwareness(false)}>取消</Button>
                     </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {emotions.length === 0 && !showAddEmotion && (
-              <div className="text-center py-12"><p className="text-muted-foreground text-sm">暂无情绪记录，点击上方按钮开始记录</p></div>
+            {filteredRecords.length === 0 && !showAddAwareness && (
+              <div className="text-center py-12"><p className="text-muted-foreground text-sm">{awarenessSearch || awarenessFilter !== "all" ? "未找到匹配记录" : "暂无觉察记录，点击上方按钮开始记录"}</p></div>
             )}
 
             <div className="space-y-2">
-              {emotions.map((record) => (
+              {filteredRecords.map((record) => (
                 <motion.div key={record.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <span className="text-base font-medium">{record.emotionType}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{record.person}</span>
+                        <span className="text-base font-medium">{record.emotionType}</span>
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] text-muted-foreground">{record.date}</span>
                         <div className="flex gap-0.5">
@@ -339,66 +380,35 @@ export default function GoalsPage() {
                   {record.trigger && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">触发: </span>{record.trigger}</p>}
                   {record.thoughts && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">想法: </span>{record.thoughts}</p>}
                   {record.copingStrategy && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">应对: </span>{record.copingStrategy}</p>}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* ─── 亲密关系记录 ─── */}
-        <TabsContent value="relationship">
-          <div className="mt-4">
-            <div className="flex justify-end mb-3">
-              <Button size="sm" onClick={() => setShowAddRelation(!showAddRelation)} className="rounded-full">
-                <Plus className="w-4 h-4 mr-1" />记录问题
-              </Button>
-            </div>
-
-            <AnimatePresence>
-              {showAddRelation && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
-                  <div className="bg-card rounded-xl shadow-card p-4 space-y-3">
-                    <Select value={newPerson} onValueChange={setNewPerson}>
-                      <SelectTrigger><SelectValue placeholder="选择对象" /></SelectTrigger>
-                      <SelectContent>
-                        {personList.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                    <Textarea placeholder="遇到的问题..." value={newProblem} onChange={(e) => setNewProblem(e.target.value)} className="min-h-[80px] resize-none" />
-                    <Textarea placeholder="解决方式（可稍后补充）" value={newSolution} onChange={(e) => setNewSolution(e.target.value)} className="min-h-[60px] resize-none" />
-                    <Textarea placeholder="反思与收获（可稍后补充）" value={newReflection} onChange={(e) => setNewReflection(e.target.value)} className="min-h-[60px] resize-none" />
-                    <div className="flex gap-2">
-                      <Button onClick={handleAddRelation} size="sm">保存</Button>
-                      <Button variant="ghost" size="sm" onClick={() => setShowAddRelation(false)}>取消</Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {relationships.length === 0 && !showAddRelation && (
-              <div className="text-center py-12"><p className="text-muted-foreground text-sm">暂无关系记录，点击上方按钮开始记录</p></div>
-            )}
-
-            <div className="space-y-2">
-              {relationships.map((record) => (
-                <motion.div key={record.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        {record.person && <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{record.person}</span>}
-                        <button onClick={() => { const s = ["unresolved", "in_progress", "resolved"] as const; handleRelationStatus(record.id, s[(s.indexOf(record.status) + 1) % 3]); }} className={cn("text-[10px] px-2 py-0.5 rounded-full", RELATION_STATUS_COLORS[record.status])}>{RELATION_STATUS_LABELS[record.status]}</button>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">{record.date}</span>
-                    </div>
-                    <button onClick={() => deleteRelationshipRecord(record.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                  <p className="text-sm mt-1"><span className="font-medium text-foreground/70">问题: </span>{record.problem}</p>
-                  {record.solution && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">解决: </span>{record.solution}</p>}
                   {record.reflection && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">反思: </span>{record.reflection}</p>}
                 </motion.div>
               ))}
             </div>
+
+            {/* Legacy relationship records (read-only display) */}
+            {legacyRelationships.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">历史关系记录</h3>
+                <div className="space-y-2">
+                  {legacyRelationships.map((record) => (
+                    <motion.div key={record.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-card p-4 opacity-75">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            {record.person && <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{record.person}</span>}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground">{record.date}</span>
+                        </div>
+                        <button onClick={() => deleteRelationshipRecord(record.id).then(loadData)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                      <p className="text-sm mt-1"><span className="font-medium text-foreground/70">问题: </span>{record.problem}</p>
+                      {record.solution && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">解决: </span>{record.solution}</p>}
+                      {record.reflection && <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground/70">反思: </span>{record.reflection}</p>}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
 
