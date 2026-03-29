@@ -506,11 +506,13 @@ export async function getEmotionRecords(userId: string): Promise<EmotionRecord[]
     id: r.id,
     userId: r.user_id,
     date: r.date,
+    person: r.person || "自己",
     emotionType: r.emotion_type,
     intensity: r.intensity,
     trigger: r.trigger || "",
     thoughts: r.thoughts || "",
     copingStrategy: r.coping_strategy || "",
+    reflection: r.reflection || "",
     createdAt: r.created_at,
   }));
 }
