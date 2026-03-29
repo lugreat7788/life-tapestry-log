@@ -49,6 +49,8 @@ export type Database = {
           emotion_type: string
           id: string
           intensity: number
+          person: string | null
+          reflection: string | null
           thoughts: string | null
           trigger: string | null
           updated_at: string
@@ -61,6 +63,8 @@ export type Database = {
           emotion_type?: string
           id?: string
           intensity?: number
+          person?: string | null
+          reflection?: string | null
           thoughts?: string | null
           trigger?: string | null
           updated_at?: string
@@ -73,6 +77,8 @@ export type Database = {
           emotion_type?: string
           id?: string
           intensity?: number
+          person?: string | null
+          reflection?: string | null
           thoughts?: string | null
           trigger?: string | null
           updated_at?: string
