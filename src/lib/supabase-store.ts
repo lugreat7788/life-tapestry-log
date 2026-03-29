@@ -521,11 +521,13 @@ export async function addEmotionRecord(userId: string, record: Omit<EmotionRecor
   await supabase.from("emotion_records").insert({
     user_id: userId,
     date: record.date,
+    person: record.person || "自己",
     emotion_type: record.emotionType,
     intensity: record.intensity,
     trigger: record.trigger || null,
     thoughts: record.thoughts || null,
     coping_strategy: record.copingStrategy || null,
+    reflection: record.reflection || null,
   } as any);
 }
 
