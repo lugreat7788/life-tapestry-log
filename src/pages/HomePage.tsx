@@ -6,6 +6,7 @@ import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
 import { StreakRiskBanner, MilestoneBadge } from "@/components/CelebrationAnimation";
 import WeeklyReview from "@/components/WeeklyReview";
+import InsightReview from "@/components/InsightReview";
 import { getDailyLog, getStreakDays, getAllTimePoints, getAllLogs } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
@@ -135,6 +136,11 @@ export default function HomePage() {
           <WeeklyReview allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
         </div>
       )}
+
+      {/* AI insight review */}
+      <div className="mt-3">
+        <InsightReview log={log} coreModules={coreModules} bonusModules={bonusModules} />
+      </div>
 
       <h2 className="text-[9px] font-medium text-muted-foreground/60 mt-3 mb-2 uppercase tracking-[0.15em]">
         每日必修
