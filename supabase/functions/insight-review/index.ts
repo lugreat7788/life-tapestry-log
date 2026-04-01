@@ -60,10 +60,10 @@ serve(async (req) => {
     return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
   }
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const apiKey = Deno.env.get("DEEPSEEK_API_KEY");
   if (!apiKey) {
     return new Response(
-      JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }),
+      JSON.stringify({ error: "DEEPSEEK_API_KEY not configured" }),
       { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
@@ -85,31 +85,32 @@ serve(async (req) => {
     );
   }
 
-  const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
+  const deepseekRes = await fetch("https://api.deepseek.com/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
+      model: "deepseek-chat",
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: body.prompt }],
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: body.prompt },
+      ],
     }),
   });
 
-  if (!anthropicRes.ok) {
-    const errText = await anthropicRes.text();
+  if (!deepseekRes.ok) {
+    const errText = await deepseekRes.text();
     return new Response(
-      JSON.stringify({ error: `Anthropic API error: ${anthropicRes.status}`, detail: errText }),
+      JSON.stringify({ error: `DeepSeek API error: ${deepseekRes.status}`, detail: errText }),
       { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
 
-  const data = await anthropicRes.json();
-  const text: string = data.content?.[0]?.text ?? "";
+  const data = await deepseekRes.json();
+  const text: string = data.choices?.[0]?.message?.content ?? "";
 
   return new Response(
     JSON.stringify({ insight: text }),
