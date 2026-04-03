@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
-import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals } from "@/lib/supabase-store";
+import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals, getSkipReasons } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2 } from "lucide-react";
