@@ -60,10 +60,10 @@ serve(async (req) => {
     return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
   }
 
-  const apiKey = Deno.env.get("DEEPSEEK_API_KEY");
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) {
     return new Response(
-      JSON.stringify({ error: "DEEPSEEK_API_KEY not configured" }),
+      JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
       { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
@@ -85,35 +85,44 @@ serve(async (req) => {
     );
   }
 
-  const deepseekRes = await fetch("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      max_tokens: 1024,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: body.prompt },
-      ],
-    }),
-  });
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        max_tokens: 1024,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: body.prompt },
+        ],
+      }),
+    });
 
-  if (!deepseekRes.ok) {
-    const errText = await deepseekRes.text();
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("AI API error:", res.status, errText);
+      return new Response(
+        JSON.stringify({ error: `AI API error: ${res.status}`, detail: errText }),
+        { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+
+    const data = await res.json();
+    const text: string = data.choices?.[0]?.message?.content ?? "";
+
     return new Response(
-      JSON.stringify({ error: `DeepSeek API error: ${deepseekRes.status}`, detail: errText }),
-      { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      JSON.stringify({ insight: text }),
+      { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return new Response(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
-
-  const data = await deepseekRes.json();
-  const text: string = data.choices?.[0]?.message?.content ?? "";
-
-  return new Response(
-    JSON.stringify({ insight: text }),
-    { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-  );
 });
