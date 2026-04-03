@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { format, subDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText, Sprout } from "lucide-react";
+import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText, Sprout, Zap, AlertTriangle } from "lucide-react";
 import { getModuleMaxPoints } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
-import { getDailyLog, toggleEntry, toggleEntryMinimum, updateEntryNotes, updateSleepTime } from "@/lib/supabase-store";
+import { getDailyLog, toggleEntry, toggleEntryMinimum, updateEntryNotes, updateSleepTime, addSkipReason, getAllLogs } from "@/lib/supabase-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { FloatingPoints, FullCelebration } from "@/components/CelebrationAnimation";
 import { CORE_MODULES } from "@/lib/modules";
+import { getDailyPrompt, QUICK_ENTRY_PROMPTS, SKIP_REASONS } from "@/lib/prompts";
 import {
   Drawer,
   DrawerContent,
@@ -42,6 +44,16 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const generalFileInputRef = useRef<HTMLInputElement>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   
+  // Quick entry state
+  const [quickEntryItem, setQuickEntryItem] = useState<string | null>(null);
+  const [quickEntryText, setQuickEntryText] = useState("");
+  
+  // Skip reason state
+  const [skipReasonItem, setSkipReasonItem] = useState<string | null>(null);
+  
+  // Consecutive skip tracking
+  const [skipStreaks, setSkipStreaks] = useState<Record<string, number>>({});
+  
   // Celebration state
   const [floatingPoints, setFloatingPoints] = useState<Array<{ id: number; points: number; isMinimum: boolean; x: number; y: number }>>([]);
   const [showFullCelebration, setShowFullCelebration] = useState(false);
@@ -67,6 +79,34 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
       setFileUrls(fUrls);
     }
   }, [user, date]);
+
+  // Load consecutive skip streaks
+  useEffect(() => {
+    if (!user) return;
+    getAllLogs(user.id).then((allLogs) => {
+      const streaks: Record<string, number> = {};
+      for (const item of module.items) {
+        const today = new Date();
+        let streak = 0;
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const key = format(d, "yyyy-MM-dd");
+          const dayLog = allLogs[key];
+          if (!dayLog) {
+            if (i === 0) continue;
+            streak++;
+          } else if (!dayLog.entries[item.id]?.completed) {
+            streak++;
+          } else {
+            break;
+          }
+        }
+        if (streak >= 2) streaks[item.id] = streak;
+      }
+      setSkipStreaks(streaks);
+    });
+  }, [user, module.items]);
 
   useEffect(() => {
     loadLog();
@@ -97,7 +137,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   };
 
   const checkFullCelebration = async () => {
-    // Check if all core items are now complete
     if (!date || date.toDateString() === new Date().toDateString()) {
       const updatedLog = await getDailyLog(user!.id, date);
       const coreComplete = CORE_MODULES.every((mod) =>
@@ -117,6 +156,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     if (!wasCompleted) {
       triggerFloating(points, false, event);
       await checkFullCelebration();
+      // Clear skip streak
+      setSkipStreaks((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     }
   };
 
@@ -129,7 +170,30 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     if (!wasCompleted) {
       triggerFloating(minPts, true, event);
       await checkFullCelebration();
+      setSkipStreaks((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     }
+  };
+
+  // Quick entry: submit quick note + minimum complete
+  const handleQuickEntrySubmit = async (itemId: string, points: number, event: React.MouseEvent) => {
+    if (!user || !quickEntryText.trim()) return;
+    const minPts = getItemMinPoints(itemId) ?? Math.floor(points * 0.5);
+    await updateEntryNotes(user.id, itemId, moduleKey, quickEntryText.trim(), date);
+    await toggleEntryMinimum(user.id, moduleKey, itemId, minPts, date);
+    await loadLog();
+    triggerFloating(minPts, true, event);
+    await checkFullCelebration();
+    setQuickEntryItem(null);
+    setQuickEntryText("");
+    setSkipStreaks((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
+    toast.success("快速完成！");
+  };
+
+  const handleSkipReason = async (itemId: string, reason: string) => {
+    if (!user) return;
+    await addSkipReason(user.id, itemId, moduleKey, reason, log.date || undefined);
+    setSkipReasonItem(null);
+    toast.success("已记录跳过原因");
   };
 
   const handleNotes = async (itemId: string, notes: string) => {
@@ -269,6 +333,9 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const showPhotoButton = moduleKey === "health";
   const showUploadButtons = (itemId: string) => itemId === "daily_summary" || showPhotoButton;
 
+  // Check if item has quick entry available
+  const hasQuickEntry = (itemId: string) => !!QUICK_ENTRY_PROMPTS[itemId];
+
   return (
     <div className="px-4 pt-4 pb-6">
       <div className={cn("rounded-xl p-5 mb-6", module.bgClass)}>
@@ -333,6 +400,103 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
         onClose={() => setShowFullCelebration(false)}
       />
 
+      {/* Skip Reason Modal */}
+      <AnimatePresence>
+        {skipReasonItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+            onClick={() => setSkipReasonItem(null)}
+          >
+            <motion.div
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card rounded-t-2xl w-full max-w-lg p-5 pb-8"
+            >
+              <p className="text-sm font-semibold text-foreground mb-1">
+                今天「{module.items.find((i) => i.id === skipReasonItem)?.name}」没有完成，是因为？
+              </p>
+              <p className="text-[10px] text-muted-foreground mb-4">记录原因帮助你发现真正的阻碍</p>
+              <div className="space-y-2">
+                {SKIP_REASONS.map((r) => (
+                  <button
+                    key={r.key}
+                    onClick={() => handleSkipReason(skipReasonItem, r.key)}
+                    className="w-full text-left text-sm px-4 py-3 bg-muted/50 hover:bg-muted rounded-xl transition-colors"
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Entry Modal */}
+      <AnimatePresence>
+        {quickEntryItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+            onClick={() => { setQuickEntryItem(null); setQuickEntryText(""); }}
+          >
+            <motion.div
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card rounded-t-2xl w-full max-w-lg p-5 pb-8"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">
+                  快速完成 · {module.items.find((i) => i.id === quickEntryItem)?.name}
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                {QUICK_ENTRY_PROMPTS[quickEntryItem] || "写一句话即可"}
+              </p>
+              <Textarea
+                autoFocus
+                placeholder="哪怕一句话也行..."
+                value={quickEntryText}
+                onChange={(e) => setQuickEntryText(e.target.value)}
+                className="min-h-[80px] resize-none mb-3"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setQuickEntryItem(null); setQuickEntryText(""); }}
+                  className="flex-1 text-sm py-2.5 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={(e) => {
+                    const item = module.items.find((i) => i.id === quickEntryItem);
+                    if (item) handleQuickEntrySubmit(quickEntryItem, item.points, e);
+                  }}
+                  disabled={!quickEntryText.trim()}
+                  className="flex-1 text-sm py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  ⚡ 完成 (+{(() => {
+                    const item = module.items.find((i) => i.id === quickEntryItem);
+                    if (!item) return 0;
+                    return getItemMinPoints(quickEntryItem) ?? Math.floor(item.points * 0.5);
+                  })()}分)
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="space-y-3">
         {module.items.map((item) => {
           const entry = log.entries[item.id];
@@ -342,6 +506,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
           const files = fileUrls[item.id] || [];
           const minPoints = getItemMinPoints(item.id);
           const hasMinOption = minPoints !== null && minPoints > 0;
+          const skipDays = skipStreaks[item.id] || 0;
+          const dailyPrompt = !isCompleted ? getDailyPrompt(item.id) : null;
 
           return (
             <Drawer key={item.id}>
@@ -352,6 +518,26 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   isCompleted && isMinimum && "ring-1 ring-amber-500/20"
                 )}
               >
+                {/* Consecutive skip warning */}
+                {skipDays >= 2 && !isCompleted && (
+                  <div className={cn(
+                    "px-4 py-1.5 text-[10px] flex items-center gap-1.5",
+                    skipDays >= 5 ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-600"
+                  )}>
+                    {skipDays >= 5 ? (
+                      <><AlertTriangle className="w-3 h-3" /> 🔴 连续{skipDays}天未完成</>
+                    ) : (
+                      <><AlertTriangle className="w-3 h-3" /> ⚠️ 已跳过{skipDays}天</>
+                    )}
+                    <button
+                      onClick={() => setSkipReasonItem(item.id)}
+                      className="ml-auto text-[9px] underline opacity-70 hover:opacity-100"
+                    >
+                      记录原因
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex items-center p-4 gap-3">
                   {/* Full completion button */}
                   <button
@@ -373,7 +559,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                       )}
                       {isCompleted && isMinimum && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                          <Sprout className="w-3.5 h-3.5 text-white" />
+                          <Sprout className="w-3.5 h-3.5 text-primary-foreground" />
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -389,6 +575,17 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   </div>
 
                   <div className="flex items-center gap-1.5">
+                    {/* Quick entry button */}
+                    {hasQuickEntry(item.id) && !isCompleted && (
+                      <button
+                        onClick={() => setQuickEntryItem(item.id)}
+                        className="text-[10px] text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-full flex items-center gap-0.5 transition-colors"
+                        title="快速完成"
+                      >
+                        <Zap className="w-3 h-3" />
+                      </button>
+                    )}
+
                     {/* Minimum completion button */}
                     {hasMinOption && !isCompleted && (
                       <button
@@ -445,6 +642,15 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   </DrawerTrigger>
                 </div>
 
+                {/* Daily micro-prompt */}
+                {dailyPrompt && !isCompleted && (
+                  <div className="px-4 pb-3 -mt-1">
+                    <p className="text-[10px] text-muted-foreground/70 italic pl-10">
+                      💡 {dailyPrompt}
+                    </p>
+                  </div>
+                )}
+
                 {(photos.length > 0 || files.length > 0) && (
                   <div className="px-4 pb-3 space-y-2">
                     {photos.length > 0 && (
@@ -456,7 +662,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                               onClick={() => handleRemovePhoto(item.id, url)}
                               className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
-                              <X className="w-3 h-3 text-white" />
+                              <X className="w-3 h-3 text-primary-foreground" />
                             </button>
                           </div>
                         ))}
@@ -573,7 +779,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                               onClick={() => handleRemovePhoto(item.id, url)}
                               className="absolute top-1 right-1 bg-black/60 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
-                              <X className="w-3 h-3 text-white" />
+                              <X className="w-3 h-3 text-primary-foreground" />
                             </button>
                           </div>
                         ))}

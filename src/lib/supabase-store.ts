@@ -784,3 +784,46 @@ export async function getTotalSpentPoints(userId: string): Promise<number> {
     .eq("user_id", userId);
   return (data || []).reduce((sum, r: any) => sum + (r.points_spent || 0), 0);
 }
+
+// ─── Skip Reasons ───
+
+export async function getSkipReasons(userId: string) {
+  const { data } = await supabase
+    .from("skip_reasons" as any)
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false });
+  return (data || []) as unknown as Array<{ id: string; user_id: string; item_id: string; module_key: string; reason: string; date: string; created_at: string }>;
+}
+
+export async function addSkipReason(userId: string, itemId: string, moduleKey: string, reason: string, date?: string) {
+  const dateStr = date || format(new Date(), "yyyy-MM-dd");
+  await supabase.from("skip_reasons" as any).insert({
+    user_id: userId,
+    item_id: itemId,
+    module_key: moduleKey,
+    reason,
+    date: dateStr,
+  });
+}
+
+export async function getConsecutiveSkipDays(allLogs: Record<string, any>, itemId: string): Promise<number> {
+  const today = new Date();
+  let streak = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = format(d, "yyyy-MM-dd");
+    const log = allLogs[key];
+    if (!log) {
+      // If no log exists for today, don't count; for past days, count as skip
+      if (i === 0) continue;
+      streak++;
+    } else if (!log.entries[itemId]?.completed) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}

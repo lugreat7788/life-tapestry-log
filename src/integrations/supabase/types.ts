@@ -366,6 +366,36 @@ export type Database = {
         }
         Relationships: []
       }
+      skip_reasons: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          item_id: string
+          module_key: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          item_id: string
+          module_key: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          item_id?: string
+          module_key?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       todo_collections: {
         Row: {
           created_at: string

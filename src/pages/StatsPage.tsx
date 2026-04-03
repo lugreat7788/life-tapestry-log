@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
-import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals } from "@/lib/supabase-store";
+import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals, getSkipReasons } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2 } from "lucide-react";
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
 import CheckinCard from "@/components/CheckinCard";
 import EVInsightPanel from "@/components/EVInsightPanel";
+import FrictionHeatmap from "@/components/FrictionHeatmap";
 import type { EmotionRecord, RelationshipRecord, GoalItem } from "@/lib/store-types";
 import {
   ResponsiveContainer,
@@ -49,6 +50,7 @@ export default function StatsPage() {
   const [relationshipRecords, setRelationshipRecords] = useState<RelationshipRecord[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [allTimePoints, setAllTimePoints] = useState(0);
+  const [skipReasons, setSkipReasons] = useState<Array<{ id: string; item_id: string; reason: string; date: string }>>([]);
   const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
@@ -62,7 +64,8 @@ export default function StatsPage() {
       getRelationshipRecords(user.id),
       getGoals(user.id),
       getAllTimePoints(user.id),
-    ]).then(([logs, wp, s, sd, er, rr, gl, atp]) => {
+      getSkipReasons(user.id),
+    ]).then(([logs, wp, s, sd, er, rr, gl, atp, sr]) => {
       setAllLogs(logs);
       setWeekPoints(wp);
       setStreak(s);
@@ -71,6 +74,7 @@ export default function StatsPage() {
       setRelationshipRecords(rr);
       setGoals(gl);
       setAllTimePoints(atp);
+      setSkipReasons(sr as any);
       setLoading(false);
     });
   }, [user]);
@@ -637,6 +641,9 @@ export default function StatsPage() {
       <div className="mb-6">
         <WeeklyInsight allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
       </div>
+
+      {/* Friction Heatmap */}
+      <FrictionHeatmap allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} skipReasons={skipReasons} />
 
 
       <div className="bg-card rounded-xl shadow-card p-4">
