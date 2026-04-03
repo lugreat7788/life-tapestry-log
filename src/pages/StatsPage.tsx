@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import WeeklyInsight from "@/components/WeeklyInsight";
 import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -632,7 +633,12 @@ export default function StatsPage() {
         </div>
       </div>
 
-      {/* Module Completion Radar — with today/history toggle */}
+      {/* Weekly AI Review */}
+      <div className="mb-6">
+        <WeeklyInsight allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
+      </div>
+
+
       <div className="bg-card rounded-xl shadow-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-foreground">模块完成度</h2>
