@@ -64,7 +64,8 @@ export default function StatsPage() {
       getRelationshipRecords(user.id),
       getGoals(user.id),
       getAllTimePoints(user.id),
-    ]).then(([logs, wp, s, sd, er, rr, gl, atp]) => {
+      getSkipReasons(user.id),
+    ]).then(([logs, wp, s, sd, er, rr, gl, atp, sr]) => {
       setAllLogs(logs);
       setWeekPoints(wp);
       setStreak(s);
@@ -73,6 +74,7 @@ export default function StatsPage() {
       setRelationshipRecords(rr);
       setGoals(gl);
       setAllTimePoints(atp);
+      setSkipReasons(sr as any);
       setLoading(false);
     });
   }, [user]);
