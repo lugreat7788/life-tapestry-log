@@ -642,6 +642,9 @@ export default function StatsPage() {
         <WeeklyInsight allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
       </div>
 
+      {/* Friction Heatmap */}
+      <FrictionHeatmap allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} skipReasons={skipReasons} />
+
 
       <div className="bg-card rounded-xl shadow-card p-4">
         <div className="flex items-center justify-between mb-3">
