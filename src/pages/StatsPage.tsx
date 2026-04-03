@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import WeeklyInsight from "@/components/WeeklyInsight";
 import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
