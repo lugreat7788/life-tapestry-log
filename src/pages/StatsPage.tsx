@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
 import CheckinCard from "@/components/CheckinCard";
 import EVInsightPanel from "@/components/EVInsightPanel";
+import FrictionHeatmap from "@/components/FrictionHeatmap";
 import type { EmotionRecord, RelationshipRecord, GoalItem } from "@/lib/store-types";
 import {
   ResponsiveContainer,
