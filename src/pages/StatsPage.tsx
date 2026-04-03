@@ -50,6 +50,7 @@ export default function StatsPage() {
   const [relationshipRecords, setRelationshipRecords] = useState<RelationshipRecord[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [allTimePoints, setAllTimePoints] = useState(0);
+  const [skipReasons, setSkipReasons] = useState<Array<{ id: string; item_id: string; reason: string; date: string }>>([]);
   const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
