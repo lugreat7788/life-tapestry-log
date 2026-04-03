@@ -793,7 +793,7 @@ export async function getSkipReasons(userId: string) {
     .select("*")
     .eq("user_id", userId)
     .order("date", { ascending: false });
-  return (data || []) as Array<{ id: string; user_id: string; item_id: string; module_key: string; reason: string; date: string; created_at: string }>;
+  return (data || []) as unknown as Array<{ id: string; user_id: string; item_id: string; module_key: string; reason: string; date: string; created_at: string }>;
 }
 
 export async function addSkipReason(userId: string, itemId: string, moduleKey: string, reason: string, date?: string) {
