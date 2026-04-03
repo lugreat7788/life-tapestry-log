@@ -86,7 +86,7 @@ serve(async (req) => {
   }
 
   try {
-    const res = await fetch("https://api.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
