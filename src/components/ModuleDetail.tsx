@@ -7,7 +7,9 @@ import type { ModuleKey } from "@/lib/modules";
 import { getDailyLog, toggleEntry, toggleEntryMinimum, updateEntryNotes, updateSleepTime, addSkipReason, getAllLogs } from "@/lib/supabase-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDataCache } from "@/hooks/useDataCache";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
+import { useDebouncedWrite } from "@/hooks/useDebouncedWrite";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,7 @@ const DIET_ITEM_IDS = ["diet_breakfast", "diet_lunch", "diet_dinner"];
 
 export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const { user } = useAuth();
+  const cache = useDataCache();
   const { getModule, config } = useModuleConfig();
   const module = getModule(moduleKey)!;
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
@@ -44,25 +47,37 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const generalFileInputRef = useRef<HTMLInputElement>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   
-  // Quick entry state
   const [quickEntryItem, setQuickEntryItem] = useState<string | null>(null);
   const [quickEntryText, setQuickEntryText] = useState("");
-  
-  // Skip reason state
   const [skipReasonItem, setSkipReasonItem] = useState<string | null>(null);
-  
-  // Consecutive skip tracking
   const [skipStreaks, setSkipStreaks] = useState<Record<string, number>>({});
   
-  // Celebration state
   const [floatingPoints, setFloatingPoints] = useState<Array<{ id: number; points: number; isMinimum: boolean; x: number; y: number }>>([]);
   const [showFullCelebration, setShowFullCelebration] = useState(false);
   const floatingIdRef = useRef(0);
+
+  const dateStr = format(date || new Date(), "yyyy-MM-dd");
+
+  // Debounced notes writer
+  const notesWriteFn = useCallback(async (itemId: string, moduleK: string, notes: string, d?: Date) => {
+    if (!user) return;
+    await updateEntryNotes(user.id, itemId, moduleK, notes, d);
+  }, [user]);
+  const { debouncedWrite: debouncedNotesWrite, saving: notesSaving } = useDebouncedWrite(notesWriteFn);
+
+  // Debounced sleep writer
+  const sleepWriteFn = useCallback(async (bedtime: string, waketime: string, d?: Date) => {
+    if (!user) return;
+    await updateSleepTime(user.id, bedtime, waketime, d);
+  }, [user]);
+  const { debouncedWrite: debouncedSleepWrite } = useDebouncedWrite(sleepWriteFn);
 
   const loadLog = useCallback(async () => {
     if (!user) return;
     const data = await getDailyLog(user.id, date);
     setLog(data);
+    // Update cache
+    cache.updateDailyLogOptimistic(dateStr, () => data);
 
     if (data.id) {
       const { data: entries } = await supabase
@@ -78,7 +93,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
       setPhotoUrls(urls);
       setFileUrls(fUrls);
     }
-  }, [user, date]);
+  }, [user, date, dateStr, cache]);
 
   // Load consecutive skip streaks
   useEffect(() => {
@@ -136,11 +151,11 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     setFloatingPoints((prev) => [...prev, { id, points, isMinimum, x: rect.left + rect.width / 2, y: rect.top }]);
   };
 
-  const checkFullCelebration = async () => {
+  const checkFullCelebration = () => {
     if (!date || date.toDateString() === new Date().toDateString()) {
-      const updatedLog = await getDailyLog(user!.id, date);
+      // Use local log state for instant check
       const coreComplete = CORE_MODULES.every((mod) =>
-        mod.items.every((item) => updatedLog.entries[item.id]?.completed)
+        mod.items.every((item) => log.entries[item.id]?.completed)
       );
       if (coreComplete) {
         setShowFullCelebration(true);
@@ -148,58 +163,164 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     }
   };
 
-  const handleToggle = async (itemId: string, points: number, event: React.MouseEvent) => {
+  // ── OPTIMISTIC TOGGLE ──
+  const handleToggle = (itemId: string, points: number, event: React.MouseEvent) => {
     if (!user) return;
     const wasCompleted = log.entries[itemId]?.completed;
-    await toggleEntry(user.id, moduleKey, itemId, points, date);
-    await loadLog();
+
+    // 1. Optimistic UI update IMMEDIATELY
+    setLog((prev) => {
+      const newEntries = { ...prev.entries };
+      if (wasCompleted) {
+        newEntries[itemId] = { ...newEntries[itemId], completed: false, completionType: "full" as const };
+      } else {
+        newEntries[itemId] = {
+          itemId,
+          moduleKey,
+          completed: true,
+          completionType: "full" as const,
+          notes: newEntries[itemId]?.notes || "",
+          timestamp: new Date().toISOString(),
+        };
+      }
+      const newTotal = wasCompleted
+        ? Math.max(0, prev.totalPoints - points)
+        : prev.totalPoints + points;
+      const updated = { ...prev, entries: newEntries, totalPoints: newTotal };
+      // Also update the shared cache
+      cache.updateDailyLogOptimistic(dateStr, () => updated);
+      return updated;
+    });
+
     if (!wasCompleted) {
       triggerFloating(points, false, event);
-      await checkFullCelebration();
-      // Clear skip streak
       setSkipStreaks((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     }
+
+    // 2. Fire background write (no await)
+    toggleEntry(user.id, moduleKey, itemId, points, date).then(() => {
+      // After write succeeds, check celebration with fresh data
+      if (!wasCompleted) {
+        getDailyLog(user.id, date).then((freshLog) => {
+          cache.updateDailyLogOptimistic(dateStr, () => freshLog);
+          const coreComplete = CORE_MODULES.every((mod) =>
+            mod.items.every((item) => freshLog.entries[item.id]?.completed)
+          );
+          if (coreComplete) setShowFullCelebration(true);
+        });
+      }
+    }).catch(() => {
+      // Revert on failure
+      toast.error("保存失败，请重试");
+      cache.invalidateDate(dateStr);
+      loadLog();
+    });
   };
 
-  const handleMinimumComplete = async (itemId: string, points: number, event: React.MouseEvent) => {
+  // ── OPTIMISTIC MINIMUM COMPLETE ──
+  const handleMinimumComplete = (itemId: string, points: number, event: React.MouseEvent) => {
     if (!user) return;
     const minPts = getItemMinPoints(itemId) ?? Math.floor(points * 0.5);
     const wasCompleted = log.entries[itemId]?.completed;
-    await toggleEntryMinimum(user.id, moduleKey, itemId, minPts, date);
-    await loadLog();
+
+    // Optimistic
+    setLog((prev) => {
+      const newEntries = { ...prev.entries };
+      if (wasCompleted) {
+        newEntries[itemId] = { ...newEntries[itemId], completed: false, completionType: "full" as const };
+      } else {
+        newEntries[itemId] = {
+          itemId,
+          moduleKey,
+          completed: true,
+          completionType: "minimum" as const,
+          notes: newEntries[itemId]?.notes || "",
+          timestamp: new Date().toISOString(),
+        };
+      }
+      const newTotal = wasCompleted
+        ? Math.max(0, prev.totalPoints - minPts)
+        : prev.totalPoints + minPts;
+      const updated = { ...prev, entries: newEntries, totalPoints: newTotal };
+      cache.updateDailyLogOptimistic(dateStr, () => updated);
+      return updated;
+    });
+
     if (!wasCompleted) {
       triggerFloating(minPts, true, event);
-      await checkFullCelebration();
       setSkipStreaks((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     }
+
+    toggleEntryMinimum(user.id, moduleKey, itemId, minPts, date).catch(() => {
+      toast.error("保存失败，请重试");
+      cache.invalidateDate(dateStr);
+      loadLog();
+    });
   };
 
   // Quick entry: submit quick note + minimum complete
-  const handleQuickEntrySubmit = async (itemId: string, points: number, event: React.MouseEvent) => {
+  const handleQuickEntrySubmit = (itemId: string, points: number, event: React.MouseEvent) => {
     if (!user || !quickEntryText.trim()) return;
     const minPts = getItemMinPoints(itemId) ?? Math.floor(points * 0.5);
-    await updateEntryNotes(user.id, itemId, moduleKey, quickEntryText.trim(), date);
-    await toggleEntryMinimum(user.id, moduleKey, itemId, minPts, date);
-    await loadLog();
+
+    // Optimistic
+    setLog((prev) => {
+      const newEntries = { ...prev.entries };
+      newEntries[itemId] = {
+        itemId,
+        moduleKey,
+        completed: true,
+        completionType: "minimum" as const,
+        notes: quickEntryText.trim(),
+        timestamp: new Date().toISOString(),
+      };
+      const updated = { ...prev, entries: newEntries, totalPoints: prev.totalPoints + minPts };
+      cache.updateDailyLogOptimistic(dateStr, () => updated);
+      return updated;
+    });
+
     triggerFloating(minPts, true, event);
-    await checkFullCelebration();
+    setSkipStreaks((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     setQuickEntryItem(null);
     setQuickEntryText("");
-    setSkipStreaks((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     toast.success("快速完成！");
+
+    // Background writes
+    Promise.all([
+      updateEntryNotes(user.id, itemId, moduleKey, quickEntryText.trim(), date),
+      toggleEntryMinimum(user.id, moduleKey, itemId, minPts, date),
+    ]).catch(() => {
+      toast.error("保存失败，请重试");
+      cache.invalidateDate(dateStr);
+      loadLog();
+    });
   };
 
   const handleSkipReason = async (itemId: string, reason: string) => {
     if (!user) return;
-    await addSkipReason(user.id, itemId, moduleKey, reason, log.date || undefined);
     setSkipReasonItem(null);
     toast.success("已记录跳过原因");
+    addSkipReason(user.id, itemId, moduleKey, reason, log.date || undefined).catch(() => {
+      toast.error("记录失败");
+    });
   };
 
-  const handleNotes = async (itemId: string, notes: string) => {
+  // ── DEBOUNCED NOTES ──
+  const handleNotes = (itemId: string, notes: string) => {
     if (!user) return;
-    await updateEntryNotes(user.id, itemId, moduleKey, notes, date);
-    await loadLog();
+    // Optimistic local update
+    setLog((prev) => {
+      const newEntries = { ...prev.entries };
+      newEntries[itemId] = {
+        ...(newEntries[itemId] || { itemId, moduleKey, completed: false, timestamp: new Date().toISOString() }),
+        notes,
+      };
+      const updated = { ...prev, entries: newEntries };
+      cache.updateDailyLogOptimistic(dateStr, () => updated);
+      return updated;
+    });
+    // Debounced write
+    debouncedNotesWrite(itemId, moduleKey, notes, date);
   };
 
   const handlePhotoUpload = async (itemId: string, file: File) => {
@@ -234,8 +355,9 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
           .eq("item_id", itemId);
       }
 
+      // Optimistic photo update
+      setPhotoUrls((prev) => ({ ...prev, [itemId]: updatedUrls }));
       toast.success("照片上传成功");
-      await loadLog();
     } catch {
       toast.error("照片上传失败");
     } finally {
@@ -247,6 +369,9 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     if (!user) return;
     const currentUrls = photoUrls[itemId] || [];
     const updatedUrls = currentUrls.filter((u) => u !== urlToRemove);
+
+    // Optimistic
+    setPhotoUrls((prev) => ({ ...prev, [itemId]: updatedUrls }));
 
     const { data: logData } = await supabase
       .from("daily_logs")
@@ -262,7 +387,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
         .eq("daily_log_id", logData.id)
         .eq("item_id", itemId);
     }
-    await loadLog();
   };
 
   const handleFileUpload = async (itemId: string, file: File) => {
@@ -298,8 +422,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
           .eq("item_id", itemId);
       }
 
+      setFileUrls((prev) => ({ ...prev, [itemId]: updatedUrls }));
       toast.success("文件上传成功");
-      await loadLog();
     } catch {
       toast.error("文件上传失败");
     } finally {
@@ -311,6 +435,9 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     if (!user) return;
     const currentUrls = fileUrls[itemId] || [];
     const updatedUrls = currentUrls.filter((u) => u !== urlToRemove);
+
+    // Optimistic
+    setFileUrls((prev) => ({ ...prev, [itemId]: updatedUrls }));
 
     const { data: logData } = await supabase
       .from("daily_logs")
@@ -326,14 +453,11 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
         .eq("daily_log_id", logData.id)
         .eq("item_id", itemId);
     }
-    await loadLog();
   };
 
   const isDietItem = (itemId: string) => DIET_ITEM_IDS.includes(itemId);
   const showPhotoButton = moduleKey === "health";
   const showUploadButtons = (itemId: string) => itemId === "daily_summary" || showPhotoButton;
-
-  // Check if item has quick entry available
   const hasQuickEntry = (itemId: string) => !!QUICK_ENTRY_PROMPTS[itemId];
 
   return (
@@ -347,6 +471,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {earnedPoints} / {getModuleMaxPoints(module)} 分已获得
+              {notesSaving && <span className="ml-2 text-xs text-muted-foreground/60 animate-pulse">保存中…</span>}
             </p>
           </div>
         </div>
@@ -381,7 +506,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
         }}
       />
 
-      {/* Floating points animations */}
       {floatingPoints.map((fp) => (
         <FloatingPoints
           key={fp.id}
@@ -393,7 +517,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
         />
       ))}
 
-      {/* Full celebration overlay */}
       <FullCelebration
         show={showFullCelebration}
         totalScore={log.totalPoints}
@@ -518,7 +641,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   isCompleted && isMinimum && "ring-1 ring-amber-500/20"
                 )}
               >
-                {/* Consecutive skip warning */}
                 {skipDays >= 2 && !isCompleted && (
                   <div className={cn(
                     "px-4 py-1.5 text-[10px] flex items-center gap-1.5",
@@ -539,7 +661,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                 )}
 
                 <div className="flex items-center p-4 gap-3">
-                  {/* Full completion button */}
                   <button
                     onClick={(e) => handleToggle(item.id, item.points, e)}
                     className={cn(
@@ -575,7 +696,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {/* Quick entry button */}
                     {hasQuickEntry(item.id) && !isCompleted && (
                       <button
                         onClick={() => setQuickEntryItem(item.id)}
@@ -586,7 +706,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                       </button>
                     )}
 
-                    {/* Minimum completion button */}
                     {hasMinOption && !isCompleted && (
                       <button
                         onClick={(e) => handleMinimumComplete(item.id, item.points, e)}
@@ -642,7 +761,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                   </DrawerTrigger>
                 </div>
 
-                {/* Daily micro-prompt */}
                 {dailyPrompt && !isCompleted && (
                   <div className="px-4 pb-3 -mt-1">
                     <p className="text-[10px] text-muted-foreground/70 italic pl-10">
@@ -704,10 +822,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                         <Input
                           type="time"
                           defaultValue={entry?.sleepBedtime || ""}
-                          onBlur={async (e) => {
-                            if (!user) return;
-                            await updateSleepTime(user.id, e.target.value, entry?.sleepWaketime || "", date);
-                            await loadLog();
+                          onBlur={(e) => {
+                            debouncedSleepWrite(e.target.value, entry?.sleepWaketime || "", date);
                           }}
                           className="flex-1"
                         />
@@ -718,10 +834,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                         <Input
                           type="time"
                           defaultValue={entry?.sleepWaketime || ""}
-                          onBlur={async (e) => {
-                            if (!user) return;
-                            await updateSleepTime(user.id, entry?.sleepBedtime || "", e.target.value, date);
-                            await loadLog();
+                          onBlur={(e) => {
+                            debouncedSleepWrite(entry?.sleepBedtime || "", e.target.value, date);
                           }}
                           className="flex-1"
                         />
@@ -747,7 +861,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                     onBlur={(e) => handleNotes(item.id, e.target.value)}
                     className="min-h-[120px] resize-none"
                   />
-                  {/* Upload buttons in drawer for daily_summary */}
                   {item.id === "daily_summary" && (
                     <div className="flex gap-2 mt-3">
                       <button
