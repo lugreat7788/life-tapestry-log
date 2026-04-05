@@ -7,8 +7,8 @@ import ModuleCard from "@/components/ModuleCard";
 import { StreakRiskBanner, MilestoneBadge } from "@/components/CelebrationAnimation";
 import WeeklyReview from "@/components/WeeklyReview";
 import InsightReview from "@/components/InsightReview";
-import { getDailyLog, getStreakDays, getAllTimePoints, getAllLogs } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
+import { useDataCache } from "@/hooks/useDataCache";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { CORE_MODULES } from "@/lib/modules";
 import type { DailyLog } from "@/lib/store-types";
@@ -32,6 +32,7 @@ function markMilestoneShown(days: number) {
 export default function HomePage() {
   const { user } = useAuth();
   const { coreModules, bonusModules } = useModuleConfig();
+  const cache = useDataCache();
   const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
   const [streakDays, setStreakDays] = useState(0);
   const [allTimePoints, setAllTimePoints] = useState(0);
@@ -41,38 +42,46 @@ export default function HomePage() {
 
   const loadLog = useCallback(async () => {
     if (!user) return;
-    const [data, streak, total, logs] = await Promise.all([
-      getDailyLog(user.id),
-      getStreakDays(user.id),
-      getAllTimePoints(user.id),
-      getAllLogs(user.id),
-    ]);
-    setLog(data);
-    setStreakDays(streak);
-    setAllTimePoints(total);
-    setAllLogs(logs);
+    const result = await cache.loadHomeData();
+    setLog(result.log);
+    setStreakDays(result.streak);
+    setAllTimePoints(result.allTimePoints);
+    setAllLogs(result.allLogs);
     setLoading(false);
 
     // Check milestones
     const milestones = [7, 30, 100];
     const shown = getShownMilestones();
     for (const m of milestones) {
-      if (streak >= m && !shown.includes(m)) {
+      if (result.streak >= m && !shown.includes(m)) {
         setShowMilestone(m);
         break;
       }
     }
-  }, [user]);
+  }, [user, cache]);
+
+  // Sync from cache when optimistic updates happen
+  useEffect(() => {
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const cachedLog = cache.dailyLogs[todayStr];
+    if (cachedLog) {
+      setLog(cachedLog);
+    }
+  }, [cache.dailyLogs]);
 
   useEffect(() => {
     loadLog();
   }, [loadLog]);
 
   useEffect(() => {
-    const handleFocus = () => loadLog();
+    const handleFocus = () => {
+      // On refocus, invalidate and reload
+      cache.invalidateAll();
+      loadLog();
+    };
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [loadLog]);
+  }, [loadLog, cache]);
 
   const today = format(new Date(), "M月d日 EEEE", { locale: zhCN });
 
@@ -83,7 +92,6 @@ export default function HomePage() {
   );
   const bonusPoints = 0;
 
-  // Calculate unfinished items for streak risk
   const totalCoreItems = coreModules.reduce((s, m) => s + m.items.length, 0);
   const completedCoreItems = coreModules.reduce(
     (s, m) => s + m.items.filter((item) => log.entries[item.id]?.completed).length, 0
@@ -110,7 +118,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Streak milestone celebration */}
       <AnimatePresence>
         {showMilestone && (
           <div className="mb-3">
@@ -125,19 +132,16 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Streak risk banner */}
       <StreakRiskBanner streak={streakDays} todayScore={log.totalPoints} unfinishedCount={unfinishedCount} />
 
       <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} />
 
-      {/* Weekly review card */}
       {Object.keys(allLogs).length >= 3 && (
         <div className="mt-3">
           <WeeklyReview allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
         </div>
       )}
 
-      {/* AI insight review */}
       <div className="mt-3">
         <InsightReview log={log} coreModules={coreModules} bonusModules={bonusModules} />
       </div>
