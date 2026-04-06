@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
-import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints } from "@/lib/modules";
+import { format } from "date-fns";
+import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints, MODULES } from "@/lib/modules";
 import type { Module } from "@/lib/modules";
-import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords } from "@/lib/supabase-store";
+import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords, getRewards, getRedemptions, getSleepData, getSkipReasons, getScreenTimeHistory, getTodoCollections, getGoalCollections } from "@/lib/supabase-store";
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { User, Download, ChevronRight, ChevronDown, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart } from "lucide-react";
+import { User, Download, ChevronRight, ChevronDown, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart, FileText, FileSpreadsheet, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -113,22 +114,52 @@ export default function SettingsPage() {
     toast.success("已恢复默认设置");
   };
 
+  const gatherAllData = async () => {
+    if (!user) return null;
+    const [logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, screenTimeHistory, todoCollections, goalCollections] = await Promise.all([
+      getAllLogs(user.id), getTodos(user.id), getGoals(user.id),
+      getEmotionRecords(user.id), getRelationshipRecords(user.id),
+      getRewards(user.id), getRedemptions(user.id), getSleepData(user.id),
+      getSkipReasons(user.id), getScreenTimeHistory(user.id, 365),
+      getTodoCollections(user.id), getGoalCollections(user.id),
+    ]);
+    return { logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, screenTimeHistory, todoCollections, goalCollections };
+  };
+
   const handleExportData = async () => {
     if (!user) return;
     try {
       toast.info("正在导出数据...");
-      const [logs, todos, goals, emotionRecords, relationshipRecords] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id), getEmotionRecords(user.id), getRelationshipRecords(user.id)]);
+      const data = await gatherAllData();
+      if (!data) return;
+
+      const moduleNameMap: Record<string, string> = {};
+      const itemNameMap: Record<string, string> = {};
+      MODULES.forEach((m) => { moduleNameMap[m.key] = m.name; m.items.forEach((i) => { itemNameMap[i.id] = i.name; }); });
+
       const exportData = {
         exportDate: new Date().toISOString(),
         email: user.email,
-        dailyLogs: Object.entries(logs).map(([date, log]: [string, any]) => ({
+        dailyLogs: Object.entries(data.logs).sort().map(([date, log]: [string, any]) => ({
           date, totalPoints: log.totalPoints,
-          entries: Object.values(log.entries).map((e: any) => ({ module: e.moduleKey, item: e.itemId, completed: e.completed, notes: e.notes })),
+          entries: Object.values(log.entries).map((e: any) => ({
+            module: e.moduleKey, moduleName: moduleNameMap[e.moduleKey] || e.moduleKey,
+            item: e.itemId, itemName: itemNameMap[e.itemId] || e.itemId,
+            completed: e.completed, completionType: e.completionType || "full",
+            notes: e.notes, sleepBedtime: e.sleepBedtime || null, sleepWaketime: e.sleepWaketime || null,
+          })),
         })),
-        todos: todos.map((t) => ({ text: t.text, priority: t.priority, completed: t.completed, dueDate: t.dueDate || null, points: t.points })),
-        goals: goals.map((g) => ({ title: g.title, description: g.description, type: g.type, status: g.status, targetDate: g.targetDate || null, points: g.points })),
-        emotionRecords: emotionRecords.map((e) => ({ date: e.date, emotionType: e.emotionType, intensity: e.intensity, trigger: e.trigger, thoughts: e.thoughts, copingStrategy: e.copingStrategy })),
-        relationshipRecords: relationshipRecords.map((r) => ({ date: r.date, person: r.person, problem: r.problem, solution: r.solution, reflection: r.reflection, status: r.status })),
+        todos: data.todos.map((t) => ({ text: t.text, priority: t.priority, completed: t.completed, dueDate: t.dueDate || null, points: t.points, collectionId: t.collectionId || null })),
+        todoCollections: data.todoCollections,
+        goals: data.goals.map((g) => ({ title: g.title, description: g.description, type: g.type, status: g.status, targetDate: g.targetDate || null, points: g.points, collectionId: g.collectionId || null })),
+        goalCollections: data.goalCollections,
+        emotionRecords: data.emotionRecords.map((e) => ({ date: e.date, person: e.person, emotionType: e.emotionType, intensity: e.intensity, trigger: e.trigger, thoughts: e.thoughts, copingStrategy: e.copingStrategy, reflection: e.reflection })),
+        relationshipRecords: data.relationshipRecords.map((r) => ({ date: r.date, person: r.person, problem: r.problem, solution: r.solution, reflection: r.reflection, status: r.status })),
+        rewards: data.rewards,
+        redemptions: data.redemptions,
+        sleepData: data.sleepData,
+        skipReasons: data.skipReasons,
+        screenTimeRecords: data.screenTimeHistory.map((s) => ({ date: s.date, totalMinutes: s.totalMinutes, pickups: s.pickups, categoryBreakdown: s.categoryBreakdown, notes: s.notes })),
       };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -145,41 +176,53 @@ export default function SettingsPage() {
     if (!user) return;
     try {
       toast.info("正在导出CSV...");
-      const [logs, todos, goals] = await Promise.all([getAllLogs(user.id), getTodos(user.id), getGoals(user.id)]);
+      const data = await gatherAllData();
+      if (!data) return;
 
-      const csvSections: string[] = [];
+      const moduleNameMap: Record<string, string> = {};
+      const itemNameMap: Record<string, string> = {};
+      MODULES.forEach((m) => { moduleNameMap[m.key] = m.name; m.items.forEach((i) => { itemNameMap[i.id] = i.name; }); });
 
-      // Daily logs section
-      csvSections.push("=== 每日打卡记录 ===");
-      csvSections.push("日期,模块,项目,已完成,得分,备注");
-      Object.entries(logs).sort().forEach(([date, log]: [string, any]) => {
+      const esc = (s: string) => `"${(s || "").replace(/"/g, '""')}"`;
+      const sections: string[] = [];
+
+      sections.push("=== 每日打卡记录 ===");
+      sections.push("日期,模块,项目,已完成,完成类型,备注,睡眠-就寝,睡眠-起床");
+      Object.entries(data.logs).sort().forEach(([date, log]: [string, any]) => {
         Object.values(log.entries).forEach((e: any) => {
-          const notes = (e.notes || "").replace(/"/g, '""');
-          csvSections.push(`${date},${e.moduleKey},${e.itemId},${e.completed ? "是" : "否"},${e.completed ? "已得分" : "0"},"${notes}"`);
+          sections.push(`${date},${moduleNameMap[e.moduleKey] || e.moduleKey},${itemNameMap[e.itemId] || e.itemId},${e.completed ? "是" : "否"},${e.completionType === "minimum" ? "最小完成" : "完整完成"},${esc(e.notes)},${e.sleepBedtime || ""},${e.sleepWaketime || ""}`);
         });
       });
 
-      // Todos section
-      csvSections.push("");
-      csvSections.push("=== 待办事项 ===");
-      csvSections.push("内容,优先级,已完成,截止日期,积分");
-      todos.forEach((t) => {
-        const text = t.text.replace(/"/g, '""');
-        csvSections.push(`"${text}",${t.priority},${t.completed ? "是" : "否"},${t.dueDate || ""},${t.points}`);
+      sections.push("", "=== 待办事项 ===", "内容,优先级,已完成,截止日期,积分");
+      data.todos.forEach((t) => sections.push(`${esc(t.text)},${t.priority},${t.completed ? "是" : "否"},${t.dueDate || ""},${t.points}`));
+
+      sections.push("", "=== 目标 ===", "标题,描述,类型,状态,目标日期,积分");
+      data.goals.forEach((g) => sections.push(`${esc(g.title)},${esc(g.description)},${g.type === "short_term" ? "近期" : "远期"},${g.status},${g.targetDate || ""},${g.points}`));
+
+      sections.push("", "=== 情绪觉察 ===", "日期,对象,情绪类型,强度,触发事件,内心想法,应对方式,反思收获");
+      data.emotionRecords.forEach((e) => sections.push(`${e.date},${e.person},${e.emotionType},${e.intensity},${esc(e.trigger)},${esc(e.thoughts)},${esc(e.copingStrategy)},${esc(e.reflection)}`));
+
+      sections.push("", "=== 关系觉察 ===", "日期,对象,问题,解决方案,反思,状态");
+      data.relationshipRecords.forEach((r) => sections.push(`${r.date},${r.person},${esc(r.problem)},${esc(r.solution)},${esc(r.reflection)},${r.status}`));
+
+      sections.push("", "=== 手机使用 ===", "日期,总时长(分钟),拿起次数,分类详情,备注");
+      data.screenTimeHistory.forEach((s) => {
+        const cats = Object.entries(s.categoryBreakdown).map(([k, v]) => `${k}:${v}分钟`).join("; ");
+        sections.push(`${s.date},${s.totalMinutes},${s.pickups},${esc(cats)},${esc(s.notes || "")}`);
       });
 
-      // Goals section
-      csvSections.push("");
-      csvSections.push("=== 目标 ===");
-      csvSections.push("标题,描述,类型,状态,目标日期,积分");
-      goals.forEach((g) => {
-        const title = g.title.replace(/"/g, '""');
-        const desc = g.description.replace(/"/g, '""');
-        csvSections.push(`"${title}","${desc}",${g.type === "short_term" ? "近期" : "远期"},${g.status},${g.targetDate || ""},${g.points}`);
-      });
+      sections.push("", "=== 睡眠记录 ===", "日期,就寝,起床,时长(小时)");
+      data.sleepData.forEach((s) => sections.push(`${s.date},${s.bedtime},${s.waketime},${s.duration.toFixed(1)}`));
+
+      sections.push("", "=== 跳过原因 ===", "日期,模块,项目,原因");
+      data.skipReasons.forEach((s: any) => sections.push(`${s.date},${moduleNameMap[s.module_key] || s.module_key},${itemNameMap[s.item_id] || s.item_id},${esc(s.reason)}`));
+
+      sections.push("", "=== 奖励兑换 ===", "奖励,花费积分,兑换时间");
+      data.redemptions.forEach((r) => sections.push(`${esc(r.rewardName)},${r.pointsSpent},${r.redeemedAt}`));
 
       const bom = "\uFEFF";
-      const blob = new Blob([bom + csvSections.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([bom + sections.join("\n")], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -187,6 +230,193 @@ export default function SettingsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("CSV导出成功！");
+    } catch { toast.error("导出失败，请重试"); }
+  };
+
+  const handleExportHTML = async () => {
+    if (!user) return;
+    try {
+      toast.info("正在生成报告...");
+      const data = await gatherAllData();
+      if (!data) return;
+
+      const moduleNameMap: Record<string, string> = {};
+      const itemNameMap: Record<string, string> = {};
+      MODULES.forEach((m) => { moduleNameMap[m.key] = m.name; m.items.forEach((i) => { itemNameMap[i.id] = i.name; }); });
+
+      const totalDays = Object.keys(data.logs).length;
+      const totalPoints = Object.values(data.logs).reduce((s: number, l: any) => s + (l.totalPoints || 0), 0);
+      const dateRange = Object.keys(data.logs).sort();
+      const firstDate = dateRange[0] || "N/A";
+      const lastDate = dateRange[dateRange.length - 1] || "N/A";
+
+      const h = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      let html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>LifeLog 数据报告</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans SC",sans-serif;background:#f5f5f0;color:#1a1a1a;line-height:1.6;padding:16px;max-width:800px;margin:0 auto}
+h1{font-size:22px;margin-bottom:4px}
+h2{font-size:17px;margin:24px 0 12px;padding:8px 12px;background:#e8e5dc;border-radius:10px;position:sticky;top:0;z-index:10}
+h3{font-size:14px;margin:12px 0 6px;color:#555}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.stat{display:inline-block;background:#f0ede5;border-radius:8px;padding:6px 12px;margin:3px;font-size:13px}
+.stat b{color:#2d6a4f}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+th{background:#f0ede5;text-align:left;padding:6px 8px;font-weight:500;position:sticky;top:40px}
+td{padding:5px 8px;border-bottom:1px solid #eee;vertical-align:top;word-break:break-word}
+tr:nth-child(even){background:#fafaf7}
+.badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:500}
+.done{background:#d4edda;color:#155724}
+.undone{background:#f8d7da;color:#721c24}
+.note{color:#666;font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.bar{height:6px;border-radius:3px;background:#d4edda;margin-top:3px}
+.section-nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.section-nav a{font-size:12px;padding:4px 10px;background:#fff;border-radius:8px;text-decoration:none;color:#2d6a4f;box-shadow:0 1px 2px rgba(0,0,0,0.06)}
+.meta{font-size:12px;color:#888;margin-bottom:16px}
+@media(max-width:600px){table{font-size:11px}td,th{padding:4px 5px}.stat{font-size:12px;padding:4px 8px}}
+</style></head><body>
+<h1>📊 LifeLog 数据报告</h1>
+<p class="meta">${user.email} · 导出于 ${format(new Date(), "yyyy年MM月dd日 HH:mm")}</p>
+
+<div class="section-nav">
+<a href="#overview">📈 概览</a>
+<a href="#daily">📝 打卡</a>
+<a href="#emotion">👁️ 情绪</a>
+<a href="#relation">🤝 关系</a>
+<a href="#screen">📱 手机</a>
+<a href="#sleep">😴 睡眠</a>
+<a href="#goals">🏆 目标</a>
+<a href="#todos">✅ 待办</a>
+<a href="#rewards">🎁 奖励</a>
+<a href="#skip">⏭️ 跳过</a>
+</div>
+
+<h2 id="overview">📈 数据概览</h2>
+<div class="card">
+<div class="stat">📅 记录 <b>${totalDays}</b> 天</div>
+<div class="stat">⭐ 总积分 <b>${totalPoints}</b></div>
+<div class="stat">📅 从 <b>${firstDate}</b></div>
+<div class="stat">📅 到 <b>${lastDate}</b></div>
+<div class="stat">😊 情绪 <b>${data.emotionRecords.length}</b> 条</div>
+<div class="stat">🤝 关系 <b>${data.relationshipRecords.length}</b> 条</div>
+<div class="stat">📱 手机 <b>${data.screenTimeHistory.length}</b> 天</div>
+<div class="stat">🏆 目标 <b>${data.goals.length}</b> 个</div>
+<div class="stat">✅ 待办 <b>${data.todos.length}</b> 项</div>
+<div class="stat">🎁 兑换 <b>${data.redemptions.length}</b> 次</div>
+</div>`;
+
+      // Daily logs
+      html += `<h2 id="daily">📝 每日打卡记录</h2>`;
+      const sortedDates = Object.keys(data.logs).sort().reverse();
+      sortedDates.forEach((date) => {
+        const log: any = data.logs[date];
+        const entries = Object.values(log.entries) as any[];
+        const completedCount = entries.filter((e: any) => e.completed).length;
+        html += `<div class="card"><h3>${date} · ${log.totalPoints}分 · ${completedCount}/${entries.length}项</h3><table><tr><th>模块</th><th>项目</th><th>状态</th><th>备注</th></tr>`;
+        entries.forEach((e: any) => {
+          const status = e.completed
+            ? `<span class="badge done">${e.completionType === "minimum" ? "🌱最小" : "✅完成"}</span>`
+            : `<span class="badge undone">未完成</span>`;
+          html += `<tr><td>${h(moduleNameMap[e.moduleKey] || e.moduleKey)}</td><td>${h(itemNameMap[e.itemId] || e.itemId)}</td><td>${status}</td><td class="note">${h(e.notes)}</td></tr>`;
+        });
+        html += `</table></div>`;
+      });
+
+      // Emotion records
+      if (data.emotionRecords.length) {
+        html += `<h2 id="emotion">👁️ 情绪觉察</h2>`;
+        html += `<div class="card"><table><tr><th>日期</th><th>对象</th><th>情绪</th><th>强度</th><th>触发</th><th>想法</th><th>应对</th><th>反思</th></tr>`;
+        data.emotionRecords.forEach((e) => {
+          html += `<tr><td>${e.date}</td><td>${h(e.person)}</td><td>${h(e.emotionType)}</td><td>${e.intensity}/10</td><td class="note">${h(e.trigger)}</td><td class="note">${h(e.thoughts)}</td><td class="note">${h(e.copingStrategy)}</td><td class="note">${h(e.reflection)}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      // Relationship records
+      if (data.relationshipRecords.length) {
+        html += `<h2 id="relation">🤝 关系觉察</h2>`;
+        html += `<div class="card"><table><tr><th>日期</th><th>对象</th><th>问题</th><th>方案</th><th>反思</th><th>状态</th></tr>`;
+        data.relationshipRecords.forEach((r) => {
+          const statusMap: Record<string, string> = { unresolved: "未解决", in_progress: "进行中", resolved: "已解决" };
+          html += `<tr><td>${r.date}</td><td>${h(r.person)}</td><td class="note">${h(r.problem)}</td><td class="note">${h(r.solution)}</td><td class="note">${h(r.reflection)}</td><td>${statusMap[r.status] || r.status}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      // Screen time
+      if (data.screenTimeHistory.length) {
+        html += `<h2 id="screen">📱 手机使用记录</h2>`;
+        html += `<div class="card"><table><tr><th>日期</th><th>总时长</th><th>拿起</th><th>分类详情</th><th>备注</th></tr>`;
+        data.screenTimeHistory.forEach((s) => {
+          const hm = `${Math.floor(s.totalMinutes / 60)}h${s.totalMinutes % 60}m`;
+          const cats = Object.entries(s.categoryBreakdown).filter(([, v]) => v > 0).map(([k, v]) => `${k}:${v}分`).join(" ");
+          html += `<tr><td>${s.date}</td><td>${hm}</td><td>${s.pickups}次</td><td class="note">${h(cats)}</td><td class="note">${h(s.notes || "")}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      // Sleep
+      if (data.sleepData.length) {
+        html += `<h2 id="sleep">😴 睡眠记录</h2>`;
+        html += `<div class="card"><table><tr><th>日期</th><th>就寝</th><th>起床</th><th>时长</th></tr>`;
+        data.sleepData.forEach((s) => {
+          html += `<tr><td>${s.date}</td><td>${s.bedtime}</td><td>${s.waketime}</td><td>${s.duration.toFixed(1)}h</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      // Goals
+      html += `<h2 id="goals">🏆 目标</h2>`;
+      if (data.goals.length) {
+        html += `<div class="card"><table><tr><th>标题</th><th>类型</th><th>状态</th><th>目标日</th><th>描述</th></tr>`;
+        const statusMap: Record<string, string> = { not_started: "未开始", in_progress: "进行中", completed: "已完成" };
+        data.goals.forEach((g) => {
+          html += `<tr><td>${h(g.title)}</td><td>${g.type === "short_term" ? "近期" : "远期"}</td><td>${statusMap[g.status] || g.status}</td><td>${g.targetDate || "-"}</td><td class="note">${h(g.description)}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      // Todos
+      html += `<h2 id="todos">✅ 待办事项</h2>`;
+      if (data.todos.length) {
+        html += `<div class="card"><table><tr><th>内容</th><th>优先级</th><th>状态</th><th>截止</th><th>积分</th></tr>`;
+        data.todos.forEach((t) => {
+          html += `<tr><td>${h(t.text)}</td><td>${t.priority}</td><td>${t.completed ? '<span class="badge done">✅</span>' : '<span class="badge undone">待完成</span>'}</td><td>${t.dueDate || "-"}</td><td>${t.points}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      // Rewards & Redemptions
+      html += `<h2 id="rewards">🎁 奖励兑换</h2>`;
+      if (data.redemptions.length) {
+        html += `<div class="card"><table><tr><th>奖励</th><th>花费积分</th><th>兑换时间</th></tr>`;
+        data.redemptions.forEach((r) => {
+          html += `<tr><td>${h(r.rewardName)}</td><td>${r.pointsSpent}</td><td>${r.redeemedAt?.slice(0, 10) || ""}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      // Skip reasons
+      if (data.skipReasons.length) {
+        html += `<h2 id="skip">⏭️ 跳过原因记录</h2>`;
+        html += `<div class="card"><table><tr><th>日期</th><th>模块</th><th>项目</th><th>原因</th></tr>`;
+        data.skipReasons.forEach((s: any) => {
+          html += `<tr><td>${s.date}</td><td>${h(moduleNameMap[s.module_key] || s.module_key)}</td><td>${h(itemNameMap[s.item_id] || s.item_id)}</td><td>${h(s.reason)}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+      html += `<p style="text-align:center;color:#999;font-size:11px;margin:24px 0">LifeLog · 我的成长记录本</p></body></html>`;
+
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lifelog-report-${new Date().toISOString().slice(0, 10)}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("HTML报告导出成功！可在手机浏览器直接打开");
     } catch { toast.error("导出失败，请重试"); }
   };
 
@@ -355,13 +585,18 @@ export default function SettingsPage() {
           </button>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
+          <button onClick={handleExportHTML} className="flex items-center gap-3 w-full text-sm">
+            <Globe className="w-5 h-5 text-primary" /><span>导出报告 (HTML) <span className="text-xs text-muted-foreground">· 手机友好</span></span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+          </button>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
           <button onClick={handleExportData} className="flex items-center gap-3 w-full text-sm">
-            <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据 (JSON)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+            <FileText className="w-5 h-5 text-muted-foreground" /><span>导出数据 (JSON)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
           </button>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
           <button onClick={handleExportCSV} className="flex items-center gap-3 w-full text-sm">
-            <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据 (CSV)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+            <FileSpreadsheet className="w-5 h-5 text-muted-foreground" /><span>导出数据 (CSV)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
           </button>
         </div>
       </div>
