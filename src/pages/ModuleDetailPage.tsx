@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ModuleDetail from "@/components/ModuleDetail";
+import ScreenTimeDetail from "@/components/ScreenTimeDetail";
 import type { ModuleKey } from "@/lib/modules";
 import { MODULES } from "@/lib/modules";
 
@@ -20,7 +20,6 @@ export default function ModuleDetailPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      {/* Back button */}
       <div className="px-4 pt-4">
         <button
           onClick={() => navigate(-1)}
@@ -31,7 +30,11 @@ export default function ModuleDetailPage() {
         </button>
       </div>
 
-      <ModuleDetail moduleKey={moduleKey as ModuleKey} />
+      {moduleKey === "screen_time" ? (
+        <ScreenTimeDetail />
+      ) : (
+        <ModuleDetail moduleKey={moduleKey as ModuleKey} />
+      )}
     </div>
   );
 }

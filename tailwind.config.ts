@@ -70,6 +70,8 @@ export default {
           "new-things-fg": "hsl(var(--module-new-things-fg))",
           "entropy-reduction": "hsl(var(--module-entropy-reduction))",
           "entropy-reduction-fg": "hsl(var(--module-entropy-reduction-fg))",
+          "screen-time": "hsl(var(--module-screen-time))",
+          "screen-time-fg": "hsl(var(--module-screen-time-fg))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

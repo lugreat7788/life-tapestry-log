@@ -366,6 +366,45 @@ export type Database = {
         }
         Relationships: []
       }
+      screen_time_records: {
+        Row: {
+          category_breakdown: Json
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          pickups: number
+          screenshot_url: string | null
+          total_minutes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_breakdown?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          pickups?: number
+          screenshot_url?: string | null
+          total_minutes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_breakdown?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          pickups?: number
+          screenshot_url?: string | null
+          total_minutes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       skip_reasons: {
         Row: {
           created_at: string
