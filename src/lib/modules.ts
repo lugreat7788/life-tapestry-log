@@ -7,6 +7,7 @@ export type ModuleKey =
   | "learning"
   | "entropy_reduction"
   | "output"
+  | "screen_time"
   | "goals";
 
 export type ModuleTier = "core" | "bonus";
