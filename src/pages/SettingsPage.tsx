@@ -585,13 +585,18 @@ tr:nth-child(even){background:#fafaf7}
           </button>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
+          <button onClick={handleExportHTML} className="flex items-center gap-3 w-full text-sm">
+            <Globe className="w-5 h-5 text-primary" /><span>导出报告 (HTML) <span className="text-xs text-muted-foreground">· 手机友好</span></span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+          </button>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
           <button onClick={handleExportData} className="flex items-center gap-3 w-full text-sm">
-            <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据 (JSON)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+            <FileText className="w-5 h-5 text-muted-foreground" /><span>导出数据 (JSON)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
           </button>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
           <button onClick={handleExportCSV} className="flex items-center gap-3 w-full text-sm">
-            <Download className="w-5 h-5 text-muted-foreground" /><span>导出数据 (CSV)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+            <FileSpreadsheet className="w-5 h-5 text-muted-foreground" /><span>导出数据 (CSV)</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
           </button>
         </div>
       </div>
