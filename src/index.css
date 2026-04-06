@@ -56,6 +56,8 @@
     --module-new-things-fg: 170 22% 32%;
     --module-entropy-reduction: 190 18% 93%;
     --module-entropy-reduction-fg: 190 18% 35%;
+    --module-screen-time: 220 22% 93%;
+    --module-screen-time-fg: 220 22% 35%;
 
     /* Shadows — refined depth */
     --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 0 0 1px rgb(0 0 0 / 0.02);
