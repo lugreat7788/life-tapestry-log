@@ -622,56 +622,6 @@ export default function StatsPage() {
       {/* EV Insight Panel */}
       <EVInsightPanel allLogs={allLogs} modules={[...coreModules, ...bonusModules]} />
 
-  // Bowel analysis data
-  const bowelData = useMemo(() => {
-    const records: Array<{ date: string; time: string; color: string; form: string; feeling: string }> = [];
-    Object.entries(allLogs).forEach(([date, log]: [string, any]) => {
-      const entry = log.entries?.bowel_log;
-      if (entry?.completed && entry.notes) {
-        try {
-          const parsed = JSON.parse(entry.notes);
-          records.push({ date, time: parsed.time || "", color: parsed.color || "", form: parsed.form || "", feeling: parsed.feeling || "" });
-        } catch { /* skip non-JSON notes */ }
-      }
-    });
-    return records.sort((a, b) => b.date.localeCompare(a.date));
-  }, [allLogs]);
-
-  const bowelStats = useMemo(() => {
-    if (bowelData.length === 0) return null;
-    const colorCounts: Record<string, number> = {};
-    const formCounts: Record<string, number> = {};
-    bowelData.forEach((r) => {
-      if (r.color) colorCounts[r.color] = (colorCounts[r.color] || 0) + 1;
-      if (r.form) formCounts[r.form] = (formCounts[r.form] || 0) + 1;
-    });
-    const topColor = Object.entries(colorCounts).sort((a, b) => b[1] - a[1])[0];
-    const topForm = Object.entries(formCounts).sort((a, b) => b[1] - a[1])[0];
-    return { total: bowelData.length, topColor: topColor?.[0] || "—", topForm: topForm?.[0] || "—" };
-  }, [bowelData]);
-
-      <div className="bg-card rounded-xl shadow-card p-4 mb-6">
-        <h2 className="text-sm font-semibold text-foreground mb-3">本周积分</h2>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weekData}>
-              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-              <YAxis hide />
-              <Tooltip contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
-              <Bar dataKey="points" fill="hsl(239, 84%, 67%)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Weekly AI Review */}
-      <div className="mb-6">
-        <WeeklyInsight allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
-      </div>
-
-      {/* Friction Heatmap */}
-      <FrictionHeatmap allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} skipReasons={skipReasons} />
-
 
       <div className="bg-card rounded-xl shadow-card p-4">
         <div className="flex items-center justify-between mb-3">
