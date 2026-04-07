@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ModuleDetail from "@/components/ModuleDetail";
-import ScreenTimeDetail from "@/components/ScreenTimeDetail";
 import type { ModuleKey } from "@/lib/modules";
 import { MODULES } from "@/lib/modules";
 
@@ -30,11 +29,7 @@ export default function ModuleDetailPage() {
         </button>
       </div>
 
-      {moduleKey === "screen_time" ? (
-        <ScreenTimeDetail />
-      ) : (
-        <ModuleDetail moduleKey={moduleKey as ModuleKey} />
-      )}
+      <ModuleDetail moduleKey={moduleKey as ModuleKey} />
     </div>
   );
 }

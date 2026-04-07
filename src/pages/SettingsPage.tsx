@@ -159,7 +159,6 @@ export default function SettingsPage() {
         redemptions: data.redemptions,
         sleepData: data.sleepData,
         skipReasons: data.skipReasons,
-        screenTimeRecords: data.screenTimeHistory.map((s) => ({ date: s.date, totalMinutes: s.totalMinutes, pickups: s.pickups, categoryBreakdown: s.categoryBreakdown, notes: s.notes })),
       };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
