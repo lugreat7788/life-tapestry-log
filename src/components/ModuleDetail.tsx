@@ -855,12 +855,89 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                       )}
                     </div>
                   )}
+                  {item.id === "bowel_log" && (
+                    <div className="mb-4 space-y-3">
+                      <p className="text-xs text-muted-foreground">记录排便情况，帮助了解身体健康状态</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">排便时间</label>
+                          <Input
+                            type="time"
+                            defaultValue={(() => {
+                              try {
+                                const parsed = JSON.parse(entry?.notes || "{}");
+                                return parsed.time || "";
+                              } catch { return ""; }
+                            })()}
+                            onBlur={(e) => {
+                              const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
+                              handleNotes(item.id, JSON.stringify({ ...prev, time: e.target.value }));
+                            }}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">颜色</label>
+                          <select
+                            defaultValue={(() => { try { return JSON.parse(entry?.notes || "{}").color || ""; } catch { return ""; } })()}
+                            onChange={(e) => {
+                              const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
+                              handleNotes(item.id, JSON.stringify({ ...prev, color: e.target.value }));
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <option value="">选择颜色</option>
+                            <option value="黄色">🟡 黄色（正常）</option>
+                            <option value="深棕色">🟤 深棕色（正常）</option>
+                            <option value="浅棕色">🟠 浅棕色</option>
+                            <option value="绿色">🟢 绿色</option>
+                            <option value="黑色">⚫ 黑色</option>
+                            <option value="红色">🔴 红色</option>
+                            <option value="白色/灰色">⚪ 白色/灰色</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">形态</label>
+                        <select
+                          defaultValue={(() => { try { return JSON.parse(entry?.notes || "{}").form || ""; } catch { return ""; } })()}
+                          onChange={(e) => {
+                            const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
+                            handleNotes(item.id, JSON.stringify({ ...prev, form: e.target.value }));
+                          }}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <option value="">选择形态</option>
+                          <option value="硬块">硬块（便秘）</option>
+                          <option value="香肠状有裂纹">香肠状有裂纹</option>
+                          <option value="香肠状光滑">香肠状光滑（理想）</option>
+                          <option value="软块">软块</option>
+                          <option value="糊状">糊状</option>
+                          <option value="水样">水样（腹泻）</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">感受</label>
+                        <Textarea
+                          placeholder="排便是否顺畅？有无不适？"
+                          defaultValue={(() => { try { return JSON.parse(entry?.notes || "{}").feeling || ""; } catch { return ""; } })()}
+                          onBlur={(e) => {
+                            const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
+                            handleNotes(item.id, JSON.stringify({ ...prev, feeling: e.target.value }));
+                          }}
+                          className="min-h-[60px] resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {item.id !== "bowel_log" && (
                   <Textarea
                     placeholder={isDietItem(item.id) ? "记录饮食内容、热量等..." : item.id === "body_status" ? "记录今日身体状况、体重、症状等..." : item.id === "sleep_log" ? "记录睡眠质量、梦境等..." : "记录你的心得、感想..."}
                     defaultValue={entry?.notes || ""}
                     onBlur={(e) => handleNotes(item.id, e.target.value)}
                     className="min-h-[120px] resize-none"
                   />
+                  )}
                   {item.id === "daily_summary" && (
                     <div className="flex gap-2 mt-3">
                       <button

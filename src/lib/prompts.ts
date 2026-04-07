@@ -46,6 +46,10 @@ export const DEFAULT_PROMPTS: Record<string, string[]> = {
     "运动时身体感觉怎么样？",
     "今天有没有走够一万步？",
   ],
+  bowel_log: [
+    "今天排便情况如何？",
+    "记录一下排便时间和感受吧。",
+  ],
 };
 
 // Quick entry prompts — simplified one-line versions for ⚡ mode
