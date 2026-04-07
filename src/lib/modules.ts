@@ -147,19 +147,6 @@ export const BONUS_MODULES: Module[] = [
       { id: "declutter", name: "物品整理", points: 5 },
     ],
   },
-  {
-    key: "screen_time",
-    name: "手机使用",
-    icon: "📱",
-    tier: "bonus",
-    colorClass: "module-screen-time",
-    bgClass: "bg-module-screen-time",
-    fgClass: "text-module-screen-time-fg",
-    items: [
-      { id: "screen_time_record", name: "屏幕时间记录", points: 5 },
-      { id: "screen_time_review", name: "使用反思", points: 5 },
-    ],
-  },
 ];
 
 // Goals module — standalone, not in core or bonus
