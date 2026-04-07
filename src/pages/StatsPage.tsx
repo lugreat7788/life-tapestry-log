@@ -112,6 +112,34 @@ export default function StatsPage() {
     });
   }, [allLogs]);
 
+  // Bowel analysis data
+  const bowelData = useMemo(() => {
+    const records: Array<{ date: string; time: string; color: string; form: string; feeling: string }> = [];
+    Object.entries(allLogs).forEach(([date, log]: [string, any]) => {
+      const entry = log.entries?.bowel_log;
+      if (entry?.completed && entry.notes) {
+        try {
+          const parsed = JSON.parse(entry.notes);
+          records.push({ date, time: parsed.time || "", color: parsed.color || "", form: parsed.form || "", feeling: parsed.feeling || "" });
+        } catch { /* skip non-JSON notes */ }
+      }
+    });
+    return records.sort((a, b) => b.date.localeCompare(a.date));
+  }, [allLogs]);
+
+  const bowelStats = useMemo(() => {
+    if (bowelData.length === 0) return null;
+    const colorCounts: Record<string, number> = {};
+    const formCounts: Record<string, number> = {};
+    bowelData.forEach((r) => {
+      if (r.color) colorCounts[r.color] = (colorCounts[r.color] || 0) + 1;
+      if (r.form) formCounts[r.form] = (formCounts[r.form] || 0) + 1;
+    });
+    const topColor = Object.entries(colorCounts).sort((a, b) => b[1] - a[1])[0];
+    const topForm = Object.entries(formCounts).sort((a, b) => b[1] - a[1])[0];
+    return { total: bowelData.length, topColor: topColor?.[0] || "—", topForm: topForm?.[0] || "—" };
+  }, [bowelData]);
+
   const radarData = radarMode === "today" ? todayRadarData : historyRadarData;
 
   const sleepChartData = useMemo(() => {
