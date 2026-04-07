@@ -60,6 +60,7 @@ export const CORE_MODULES: Module[] = [
       { id: "body_status", name: "身体状况", points: 5 },
       { id: "sleep_log", name: "睡眠记录", points: 5 },
       { id: "exercise_log", name: "运动记录", points: 10 },
+      { id: "bowel_log", name: "排便记录", points: 2 },
     ],
   },
   {
