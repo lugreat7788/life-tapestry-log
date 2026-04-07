@@ -205,11 +205,6 @@ export default function SettingsPage() {
       sections.push("", "=== 关系觉察 ===", "日期,对象,问题,解决方案,反思,状态");
       data.relationshipRecords.forEach((r) => sections.push(`${r.date},${r.person},${esc(r.problem)},${esc(r.solution)},${esc(r.reflection)},${r.status}`));
 
-      sections.push("", "=== 手机使用 ===", "日期,总时长(分钟),拿起次数,分类详情,备注");
-      data.screenTimeHistory.forEach((s) => {
-        const cats = Object.entries(s.categoryBreakdown).map(([k, v]) => `${k}:${v}分钟`).join("; ");
-        sections.push(`${s.date},${s.totalMinutes},${s.pickups},${esc(cats)},${esc(s.notes || "")}`);
-      });
 
       sections.push("", "=== 睡眠记录 ===", "日期,就寝,起床,时长(小时)");
       data.sleepData.forEach((s) => sections.push(`${s.date},${s.bedtime},${s.waketime},${s.duration.toFixed(1)}`));
