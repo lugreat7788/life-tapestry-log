@@ -650,10 +650,63 @@ export default function StatsPage() {
       {/* EV Insight Panel */}
       <EVInsightPanel allLogs={allLogs} modules={[...coreModules, ...bonusModules]} />
 
+      {/* Bowel Analysis */}
+      {bowelStats && (
+        <div className="bg-card rounded-xl shadow-card p-4 mb-6">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            🚽 排便分析
+          </h2>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <p className="text-lg font-display font-bold">{bowelStats.total}</p>
+              <p className="text-[10px] text-muted-foreground">记录次数</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <p className="text-sm font-display font-bold">{bowelStats.topColor}</p>
+              <p className="text-[10px] text-muted-foreground">最常见颜色</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <p className="text-sm font-display font-bold truncate">{bowelStats.topForm}</p>
+              <p className="text-[10px] text-muted-foreground">最常见形态</p>
+            </div>
+          </div>
+          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+            {bowelData.slice(0, 10).map((r) => (
+              <div key={r.date} className="flex items-center gap-2 text-xs px-1">
+                <span className="text-muted-foreground w-16 shrink-0">{format(new Date(r.date), "M月d日")}</span>
+                {r.time && <span className="text-muted-foreground">{r.time}</span>}
+                {r.color && <span className="bg-muted rounded px-1.5 py-0.5">{r.color}</span>}
+                {r.form && <span className="bg-muted rounded px-1.5 py-0.5 truncate">{r.form}</span>}
+                {r.feeling && <span className="text-muted-foreground truncate flex-1">{r.feeling}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-card rounded-xl shadow-card p-4 mb-6">
+        <h2 className="text-sm font-semibold text-foreground mb-3">本周积分</h2>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={weekData}>
+              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+              <YAxis hide />
+              <Tooltip contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
+              <Bar dataKey="points" fill="hsl(239, 84%, 67%)" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Weekly AI Review */}
+      <div className="mb-6">
+        <WeeklyInsight allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} />
+      </div>
+
+      {/* Friction Heatmap */}
+      <FrictionHeatmap allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} skipReasons={skipReasons} />
 
       <div className="bg-card rounded-xl shadow-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">模块完成度</h2>
           <div className="flex bg-muted rounded-full p-0.5">
             <button
               onClick={() => setRadarMode("today")}
