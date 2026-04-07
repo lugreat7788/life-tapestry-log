@@ -112,6 +112,34 @@ export default function StatsPage() {
     });
   }, [allLogs]);
 
+  // Bowel analysis data
+  const bowelData = useMemo(() => {
+    const records: Array<{ date: string; time: string; color: string; form: string; feeling: string }> = [];
+    Object.entries(allLogs).forEach(([date, log]: [string, any]) => {
+      const entry = log.entries?.bowel_log;
+      if (entry?.completed && entry.notes) {
+        try {
+          const parsed = JSON.parse(entry.notes);
+          records.push({ date, time: parsed.time || "", color: parsed.color || "", form: parsed.form || "", feeling: parsed.feeling || "" });
+        } catch { /* skip non-JSON notes */ }
+      }
+    });
+    return records.sort((a, b) => b.date.localeCompare(a.date));
+  }, [allLogs]);
+
+  const bowelStats = useMemo(() => {
+    if (bowelData.length === 0) return null;
+    const colorCounts: Record<string, number> = {};
+    const formCounts: Record<string, number> = {};
+    bowelData.forEach((r) => {
+      if (r.color) colorCounts[r.color] = (colorCounts[r.color] || 0) + 1;
+      if (r.form) formCounts[r.form] = (formCounts[r.form] || 0) + 1;
+    });
+    const topColor = Object.entries(colorCounts).sort((a, b) => b[1] - a[1])[0];
+    const topForm = Object.entries(formCounts).sort((a, b) => b[1] - a[1])[0];
+    return { total: bowelData.length, topColor: topColor?.[0] || "—", topForm: topForm?.[0] || "—" };
+  }, [bowelData]);
+
   const radarData = radarMode === "today" ? todayRadarData : historyRadarData;
 
   const sleepChartData = useMemo(() => {
@@ -622,6 +650,39 @@ export default function StatsPage() {
       {/* EV Insight Panel */}
       <EVInsightPanel allLogs={allLogs} modules={[...coreModules, ...bonusModules]} />
 
+      {/* Bowel Analysis */}
+      {bowelStats && (
+        <div className="bg-card rounded-xl shadow-card p-4 mb-6">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            🚽 排便分析
+          </h2>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <p className="text-lg font-display font-bold">{bowelStats.total}</p>
+              <p className="text-[10px] text-muted-foreground">记录次数</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <p className="text-sm font-display font-bold">{bowelStats.topColor}</p>
+              <p className="text-[10px] text-muted-foreground">最常见颜色</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <p className="text-sm font-display font-bold truncate">{bowelStats.topForm}</p>
+              <p className="text-[10px] text-muted-foreground">最常见形态</p>
+            </div>
+          </div>
+          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+            {bowelData.slice(0, 10).map((r) => (
+              <div key={r.date} className="flex items-center gap-2 text-xs px-1">
+                <span className="text-muted-foreground w-16 shrink-0">{format(new Date(r.date), "M月d日")}</span>
+                {r.time && <span className="text-muted-foreground">{r.time}</span>}
+                {r.color && <span className="bg-muted rounded px-1.5 py-0.5">{r.color}</span>}
+                {r.form && <span className="bg-muted rounded px-1.5 py-0.5 truncate">{r.form}</span>}
+                {r.feeling && <span className="text-muted-foreground truncate flex-1">{r.feeling}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">
         <h2 className="text-sm font-semibold text-foreground mb-3">本周积分</h2>
@@ -644,7 +705,6 @@ export default function StatsPage() {
 
       {/* Friction Heatmap */}
       <FrictionHeatmap allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} skipReasons={skipReasons} />
-
 
       <div className="bg-card rounded-xl shadow-card p-4">
         <div className="flex items-center justify-between mb-3">
