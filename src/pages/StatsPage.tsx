@@ -707,6 +707,8 @@ export default function StatsPage() {
       <FrictionHeatmap allLogs={allLogs} coreModules={coreModules} bonusModules={bonusModules} skipReasons={skipReasons} />
 
       <div className="bg-card rounded-xl shadow-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground">模块完成度</h2>
           <div className="flex bg-muted rounded-full p-0.5">
             <button
               onClick={() => setRadarMode("today")}
