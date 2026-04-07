@@ -294,7 +294,6 @@ tr:nth-child(even){background:#fafaf7}
 <div class="stat">📅 到 <b>${lastDate}</b></div>
 <div class="stat">😊 情绪 <b>${data.emotionRecords.length}</b> 条</div>
 <div class="stat">🤝 关系 <b>${data.relationshipRecords.length}</b> 条</div>
-<div class="stat">📱 手机 <b>${data.screenTimeHistory.length}</b> 天</div>
 <div class="stat">🏆 目标 <b>${data.goals.length}</b> 个</div>
 <div class="stat">✅ 待办 <b>${data.todos.length}</b> 项</div>
 <div class="stat">🎁 兑换 <b>${data.redemptions.length}</b> 次</div>
