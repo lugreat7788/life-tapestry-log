@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints, MODULES } from "@/lib/modules";
 import type { Module } from "@/lib/modules";
-import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords, getRewards, getRedemptions, getSleepData, getSkipReasons, getScreenTimeHistory, getTodoCollections, getGoalCollections } from "@/lib/supabase-store";
+import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords, getRewards, getRedemptions, getSleepData, getSkipReasons, getTodoCollections, getGoalCollections } from "@/lib/supabase-store";
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -116,14 +116,14 @@ export default function SettingsPage() {
 
   const gatherAllData = async () => {
     if (!user) return null;
-    const [logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, screenTimeHistory, todoCollections, goalCollections] = await Promise.all([
+    const [logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, todoCollections, goalCollections] = await Promise.all([
       getAllLogs(user.id), getTodos(user.id), getGoals(user.id),
       getEmotionRecords(user.id), getRelationshipRecords(user.id),
       getRewards(user.id), getRedemptions(user.id), getSleepData(user.id),
-      getSkipReasons(user.id), getScreenTimeHistory(user.id, 365),
+      getSkipReasons(user.id),
       getTodoCollections(user.id), getGoalCollections(user.id),
     ]);
-    return { logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, screenTimeHistory, todoCollections, goalCollections };
+    return { logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, todoCollections, goalCollections };
   };
 
   const handleExportData = async () => {
@@ -159,7 +159,6 @@ export default function SettingsPage() {
         redemptions: data.redemptions,
         sleepData: data.sleepData,
         skipReasons: data.skipReasons,
-        screenTimeRecords: data.screenTimeHistory.map((s) => ({ date: s.date, totalMinutes: s.totalMinutes, pickups: s.pickups, categoryBreakdown: s.categoryBreakdown, notes: s.notes })),
       };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -206,11 +205,6 @@ export default function SettingsPage() {
       sections.push("", "=== 关系觉察 ===", "日期,对象,问题,解决方案,反思,状态");
       data.relationshipRecords.forEach((r) => sections.push(`${r.date},${r.person},${esc(r.problem)},${esc(r.solution)},${esc(r.reflection)},${r.status}`));
 
-      sections.push("", "=== 手机使用 ===", "日期,总时长(分钟),拿起次数,分类详情,备注");
-      data.screenTimeHistory.forEach((s) => {
-        const cats = Object.entries(s.categoryBreakdown).map(([k, v]) => `${k}:${v}分钟`).join("; ");
-        sections.push(`${s.date},${s.totalMinutes},${s.pickups},${esc(cats)},${esc(s.notes || "")}`);
-      });
 
       sections.push("", "=== 睡眠记录 ===", "日期,就寝,起床,时长(小时)");
       data.sleepData.forEach((s) => sections.push(`${s.date},${s.bedtime},${s.waketime},${s.duration.toFixed(1)}`));
@@ -300,7 +294,6 @@ tr:nth-child(even){background:#fafaf7}
 <div class="stat">📅 到 <b>${lastDate}</b></div>
 <div class="stat">😊 情绪 <b>${data.emotionRecords.length}</b> 条</div>
 <div class="stat">🤝 关系 <b>${data.relationshipRecords.length}</b> 条</div>
-<div class="stat">📱 手机 <b>${data.screenTimeHistory.length}</b> 天</div>
 <div class="stat">🏆 目标 <b>${data.goals.length}</b> 个</div>
 <div class="stat">✅ 待办 <b>${data.todos.length}</b> 项</div>
 <div class="stat">🎁 兑换 <b>${data.redemptions.length}</b> 次</div>
@@ -344,17 +337,6 @@ tr:nth-child(even){background:#fafaf7}
         html += `</table></div>`;
       }
 
-      // Screen time
-      if (data.screenTimeHistory.length) {
-        html += `<h2 id="screen">📱 手机使用记录</h2>`;
-        html += `<div class="card"><table><tr><th>日期</th><th>总时长</th><th>拿起</th><th>分类详情</th><th>备注</th></tr>`;
-        data.screenTimeHistory.forEach((s) => {
-          const hm = `${Math.floor(s.totalMinutes / 60)}h${s.totalMinutes % 60}m`;
-          const cats = Object.entries(s.categoryBreakdown).filter(([, v]) => v > 0).map(([k, v]) => `${k}:${v}分`).join(" ");
-          html += `<tr><td>${s.date}</td><td>${hm}</td><td>${s.pickups}次</td><td class="note">${h(cats)}</td><td class="note">${h(s.notes || "")}</td></tr>`;
-        });
-        html += `</table></div>`;
-      }
 
       // Sleep
       if (data.sleepData.length) {
