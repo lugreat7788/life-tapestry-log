@@ -337,17 +337,6 @@ tr:nth-child(even){background:#fafaf7}
         html += `</table></div>`;
       }
 
-      // Screen time
-      if (data.screenTimeHistory.length) {
-        html += `<h2 id="screen">📱 手机使用记录</h2>`;
-        html += `<div class="card"><table><tr><th>日期</th><th>总时长</th><th>拿起</th><th>分类详情</th><th>备注</th></tr>`;
-        data.screenTimeHistory.forEach((s) => {
-          const hm = `${Math.floor(s.totalMinutes / 60)}h${s.totalMinutes % 60}m`;
-          const cats = Object.entries(s.categoryBreakdown).filter(([, v]) => v > 0).map(([k, v]) => `${k}:${v}分`).join(" ");
-          html += `<tr><td>${s.date}</td><td>${hm}</td><td>${s.pickups}次</td><td class="note">${h(cats)}</td><td class="note">${h(s.notes || "")}</td></tr>`;
-        });
-        html += `</table></div>`;
-      }
 
       // Sleep
       if (data.sleepData.length) {
