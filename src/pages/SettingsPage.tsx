@@ -116,14 +116,14 @@ export default function SettingsPage() {
 
   const gatherAllData = async () => {
     if (!user) return null;
-    const [logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, screenTimeHistory, todoCollections, goalCollections] = await Promise.all([
+    const [logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, todoCollections, goalCollections] = await Promise.all([
       getAllLogs(user.id), getTodos(user.id), getGoals(user.id),
       getEmotionRecords(user.id), getRelationshipRecords(user.id),
       getRewards(user.id), getRedemptions(user.id), getSleepData(user.id),
-      getSkipReasons(user.id), getScreenTimeHistory(user.id, 365),
+      getSkipReasons(user.id),
       getTodoCollections(user.id), getGoalCollections(user.id),
     ]);
-    return { logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, screenTimeHistory, todoCollections, goalCollections };
+    return { logs, todos, goals, emotionRecords, relationshipRecords, rewards, redemptions, sleepData, skipReasons, todoCollections, goalCollections };
   };
 
   const handleExportData = async () => {
