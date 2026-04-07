@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints, MODULES } from "@/lib/modules";
 import type { Module } from "@/lib/modules";
-import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords, getRewards, getRedemptions, getSleepData, getSkipReasons, getScreenTimeHistory, getTodoCollections, getGoalCollections } from "@/lib/supabase-store";
+import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTodos, getGoals, getEmotionRecords, getRelationshipRecords, getRewards, getRedemptions, getSleepData, getSkipReasons, getTodoCollections, getGoalCollections } from "@/lib/supabase-store";
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
