@@ -139,7 +139,7 @@ export default function HomePage() {
 
       <StreakRiskBanner streak={streakDays} todayScore={log.totalPoints} unfinishedCount={unfinishedCount} />
 
-      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} />
+      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} coreMax={coreMax} />
 
       {Object.keys(allLogs).length >= 3 && (
         <div className="mt-3">
