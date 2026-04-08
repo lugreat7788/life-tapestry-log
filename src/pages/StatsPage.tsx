@@ -117,7 +117,7 @@ export default function StatsPage() {
     const records: Array<{ date: string; time: string; color: string; form: string; feeling: string }> = [];
     Object.entries(allLogs).forEach(([date, log]: [string, any]) => {
       const entry = log.entries?.bowel_log;
-      if (entry?.completed && entry.notes) {
+      if (entry?.notes) {
         try {
           const parsed = JSON.parse(entry.notes);
           records.push({ date, time: parsed.time || "", color: parsed.color || "", form: parsed.form || "", feeling: parsed.feeling || "" });
