@@ -90,7 +90,12 @@ export default function HomePage() {
       sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
     0
   );
-  const bonusPoints = 0;
+  const bonusPoints = bonusModules.reduce(
+    (sum, mod) =>
+      sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
+    0
+  );
+  const coreMax = coreModules.reduce((sum, mod) => sum + mod.items.reduce((s, i) => s + i.points, 0), 0);
 
   const totalCoreItems = coreModules.reduce((s, m) => s + m.items.length, 0);
   const completedCoreItems = coreModules.reduce(
@@ -134,7 +139,7 @@ export default function HomePage() {
 
       <StreakRiskBanner streak={streakDays} todayScore={log.totalPoints} unfinishedCount={unfinishedCount} />
 
-      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} />
+      <HeroCard corePoints={corePoints} bonusPoints={bonusPoints} streakDays={streakDays} allTimePoints={allTimePoints} coreMax={coreMax} />
 
       {Object.keys(allLogs).length >= 3 && (
         <div className="mt-3">
