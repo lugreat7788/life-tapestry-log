@@ -1,16 +1,14 @@
 import { motion } from "framer-motion";
 import { Flame, Trophy, Zap } from "lucide-react";
-import { getCoreMaxPoints } from "@/lib/modules";
-
 interface HeroCardProps {
   corePoints: number;
   bonusPoints: number;
   streakDays: number;
   allTimePoints: number;
+  coreMax: number;
 }
 
-export default function HeroCard({ corePoints, bonusPoints, streakDays, allTimePoints }: HeroCardProps) {
-  const coreMax = getCoreMaxPoints();
+export default function HeroCard({ corePoints, bonusPoints, streakDays, allTimePoints, coreMax }: HeroCardProps) {
   const percentage = Math.min(Math.round((corePoints / coreMax) * 100), 100);
   const todayPoints = corePoints + bonusPoints;
 

@@ -90,7 +90,12 @@ export default function HomePage() {
       sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
     0
   );
-  const bonusPoints = 0;
+  const bonusPoints = bonusModules.reduce(
+    (sum, mod) =>
+      sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
+    0
+  );
+  const coreMax = coreModules.reduce((sum, mod) => sum + mod.items.reduce((s, i) => s + i.points, 0), 0);
 
   const totalCoreItems = coreModules.reduce((s, m) => s + m.items.length, 0);
   const completedCoreItems = coreModules.reduce(
