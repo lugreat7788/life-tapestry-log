@@ -22,7 +22,10 @@ function applySingleConfig(mod: Module, config: ModuleConfig | null): Module {
   if (!config) return mod;
   const cfg = config.modules[mod.key];
   if (!cfg) return mod;
-  return { ...mod, name: cfg.name || mod.name, items: cfg.items.map((item) => ({ ...item })) };
+  const configItems = cfg.items.map((item) => ({ ...item }));
+  const configItemIds = new Set(configItems.map((i) => i.id));
+  const missingDefaults = mod.items.filter((i) => !configItemIds.has(i.id));
+  return { ...mod, name: cfg.name || mod.name, items: [...configItems, ...missingDefaults] };
 }
 
 export function useModuleConfig() {
