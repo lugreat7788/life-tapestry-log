@@ -944,9 +944,50 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                       </div>
                     </div>
                   )}
-                  {item.id !== "bowel_log" && (
+                  {item.id === "body_signal" && (
+                    <div className="mb-4 space-y-3">
+                      <p className="text-xs text-muted-foreground">30秒快速记录身体信号，帮助发现健康模式</p>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1.5 block">智齿/口腔</label>
+                        <div className="flex gap-2">
+                          {["无", "轻微", "明显"].map((v) => (
+                            <button key={v} onClick={() => { const next = { ...bodySignal, teeth: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.teeth === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1.5 block">眼睛</label>
+                        <div className="flex gap-2">
+                          {["正常", "干涩", "疲劳"].map((v) => (
+                            <button key={v} onClick={() => { const next = { ...bodySignal, eyes: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.eyes === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1.5 block">鼻子/嗓子</label>
+                        <div className="flex gap-2">
+                          {["正常", "痒", "发炎"].map((v) => (
+                            <button key={v} onClick={() => { const next = { ...bodySignal, nose: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.nose === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1.5 block">整体精力</label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((v) => (
+                            <button key={v} onClick={() => { const next = { ...bodySignal, energy: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.energy === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">备注 (可选)</label>
+                        <Textarea placeholder="其他身体信号..." defaultValue={bodySignal.notes} onBlur={(e) => { const next = { ...bodySignal, notes: e.target.value }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className="min-h-[60px] resize-none" />
+                      </div>
+                    </div>
+                  )}
+                  {item.id !== "bowel_log" && item.id !== "body_signal" && (
                   <Textarea
-                    placeholder={isDietItem(item.id) ? "记录饮食内容、热量等..." : item.id === "body_status" ? "记录今日身体状况、体重、症状等..." : item.id === "sleep_log" ? "记录睡眠质量、梦境等..." : "记录你的心得、感想..."}
+                    placeholder={isDietItem(item.id) ? "记录饮食内容、热量等..." : item.id === "body_status" ? "记录今日身体状况、体重、症状等..." : item.id === "sleep_log" ? "记录睡眠质量、梦境等..." : item.id === "idea_capture" ? "今天有什么想法值得未来写出来？一句话即可。" : "记录你的心得、感想..."}
                     defaultValue={entry?.notes || ""}
                     onBlur={(e) => handleNotes(item.id, e.target.value)}
                     className="min-h-[120px] resize-none"
