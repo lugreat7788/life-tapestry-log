@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useTransition } from "react";
 import { format, subDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText, Sprout, Zap, AlertTriangle } from "lucide-react";
 import { getModuleMaxPoints } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
-import { getDailyLog, toggleEntry, toggleEntryMinimum, updateEntryNotes, updateSleepTime, addSkipReason, getAllLogs } from "@/lib/supabase-store";
+import { getDailyLog, toggleEntry, toggleEntryMinimum, updateEntryNotes, updateSleepTime, addSkipReason, getAllLogs, saveBodySignal } from "@/lib/supabase-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDataCache } from "@/hooks/useDataCache";
@@ -55,6 +55,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const [floatingPoints, setFloatingPoints] = useState<Array<{ id: number; points: number; isMinimum: boolean; x: number; y: number }>>([]);
   const [showFullCelebration, setShowFullCelebration] = useState(false);
   const floatingIdRef = useRef(0);
+  const [bodySignal, setBodySignal] = useState<{ teeth: string; eyes: string; nose: string; energy: number; notes: string }>({ teeth: "无", eyes: "正常", nose: "正常", energy: 3, notes: "" });
+  const [, startTransition] = useTransition();
 
   const dateStr = format(date || new Date(), "yyyy-MM-dd");
 
