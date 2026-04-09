@@ -41,6 +41,12 @@ export const DEFAULT_PROMPTS: Record<string, string[]> = {
     "用英语描述你今天做的一件事。",
     "今天接触到了什么英语内容？",
   ],
+  idea_capture: [
+    "今天有什么想法值得未来写出来？一句话即可。",
+    "最近脑海中反复出现的一个主题是什么？",
+    "今天看到/听到了什么激发灵感的东西？",
+    "有没有一个想法你一直想展开但还没动笔？",
+  ],
   exercise_log: [
     "今天做了什么运动？持续了多久？",
     "运动时身体感觉怎么样？",
@@ -56,6 +62,7 @@ export const DEFAULT_PROMPTS: Record<string, string[]> = {
 export const QUICK_ENTRY_PROMPTS: Record<string, string> = {
   deep_reflection: "今天最重要的一个想法是？",
   daily_summary: "用一句话概括今天。",
+  idea_capture: "今天有什么想法值得未来写出来？一句话即可。",
   wechat_article: "写了什么？哪怕一句话的草稿也算。",
   video_content: "拍了什么？哪怕一个灵感记录也算。",
   reading: "读了什么？哪怕一页也行。",

@@ -6,7 +6,8 @@ import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTo
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { User, Download, ChevronRight, ChevronDown, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart, FileText, FileSpreadsheet, Globe } from "lucide-react";
+import { User, Download, ChevronRight, ChevronDown, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart, FileText, FileSpreadsheet, Globe, Battery } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -39,7 +40,8 @@ export default function SettingsPage() {
   const [showBonusSettings, setShowBonusSettings] = useState(false);
   const [showGoalSettings, setShowGoalSettings] = useState(false);
   const [showEmotionSettings, setShowEmotionSettings] = useState(false);
-  const [_showRelationSettings, _setShowRelationSettings] = useState(false); // kept for hook order
+  const [_showRelationSettings, _setShowRelationSettings] = useState(false);
+  const [lowEnergyMode, setLowEnergyMode] = useState(() => localStorage.getItem("lifelog_low_energy") === "true");
 
   useEffect(() => {
     if (!user) return;
@@ -558,6 +560,25 @@ tr:nth-child(even){background:#fafaf7}
             </div>
           </div>
         )}
+      </div>
+
+      <div className="bg-card rounded-xl shadow-card p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Battery className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium">低能量模式</p>
+              <p className="text-[10px] text-muted-foreground">状态不佳时开启，首页只显示最小记录项，减轻负担</p>
+            </div>
+          </div>
+          <Switch
+            checked={lowEnergyMode}
+            onCheckedChange={(checked) => {
+              setLowEnergyMode(checked);
+              localStorage.setItem("lifelog_low_energy", String(checked));
+            }}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

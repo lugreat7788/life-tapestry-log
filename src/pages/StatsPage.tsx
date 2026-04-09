@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
-import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals, getSkipReasons } from "@/lib/supabase-store";
+import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals, getSkipReasons, getBodySignals } from "@/lib/supabase-store";
+import type { BodySignal } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2 } from "lucide-react";
@@ -15,6 +16,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import CheckinCard from "@/components/CheckinCard";
 import EVInsightPanel from "@/components/EVInsightPanel";
 import FrictionHeatmap from "@/components/FrictionHeatmap";
+import MindBodyCorrelation from "@/components/MindBodyCorrelation";
 import type { EmotionRecord, RelationshipRecord, GoalItem } from "@/lib/store-types";
 import {
   ResponsiveContainer,
@@ -51,6 +53,7 @@ export default function StatsPage() {
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [allTimePoints, setAllTimePoints] = useState(0);
   const [skipReasons, setSkipReasons] = useState<Array<{ id: string; item_id: string; reason: string; date: string }>>([]);
+  const [bodySignals, setBodySignals] = useState<BodySignal[]>([]);
   const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
@@ -65,7 +68,8 @@ export default function StatsPage() {
       getGoals(user.id),
       getAllTimePoints(user.id),
       getSkipReasons(user.id),
-    ]).then(([logs, wp, s, sd, er, rr, gl, atp, sr]) => {
+      getBodySignals(user.id),
+    ]).then(([logs, wp, s, sd, er, rr, gl, atp, sr, bs]) => {
       setAllLogs(logs);
       setWeekPoints(wp);
       setStreak(s);
@@ -75,6 +79,7 @@ export default function StatsPage() {
       setGoals(gl);
       setAllTimePoints(atp);
       setSkipReasons(sr as any);
+      setBodySignals(bs);
       setLoading(false);
     });
   }, [user]);
@@ -646,6 +651,9 @@ export default function StatsPage() {
           </div>
         </div>
       )}
+
+      {/* Mind-Body Correlation */}
+      <MindBodyCorrelation allLogs={allLogs} bodySignals={bodySignals} emotionRecords={emotionRecords} sleepData={sleepData} />
 
       {/* EV Insight Panel */}
       <EVInsightPanel allLogs={allLogs} modules={[...coreModules, ...bonusModules]} />
