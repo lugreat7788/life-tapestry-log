@@ -86,20 +86,34 @@ export default function HomePage() {
 
   const today = format(new Date(), "M月d日 EEEE", { locale: zhCN });
 
-  const corePoints = coreModules.reduce(
-    (sum, mod) =>
-      sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
-    0
-  );
-  const bonusPoints = bonusModules.reduce(
-    (sum, mod) =>
-      sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
-    0
-  );
-  const coreMax = coreModules.reduce((sum, mod) => sum + mod.items.reduce((s, i) => s + i.points, 0), 0);
+  // Low energy mode: filter to 3 items only
+  const LOW_ENERGY_ITEMS = ["sleep_log", "body_signal", "daily_summary"];
+  const displayCoreModules = lowEnergyMode
+    ? coreModules.map((mod) => ({
+        ...mod,
+        items: mod.items
+          .filter((item) => LOW_ENERGY_ITEMS.includes(item.id))
+          .map((item) => ({
+            ...item,
+            points: item.id === "sleep_log" ? 40 : item.id === "body_signal" ? 30 : 30,
+          })),
+      })).filter((mod) => mod.items.length > 0)
+    : coreModules;
 
-  const totalCoreItems = coreModules.reduce((s, m) => s + m.items.length, 0);
-  const completedCoreItems = coreModules.reduce(
+  const corePoints = displayCoreModules.reduce(
+    (sum, mod) =>
+      sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
+    0
+  );
+  const bonusPoints = lowEnergyMode ? 0 : bonusModules.reduce(
+    (sum, mod) =>
+      sum + mod.items.reduce((s, item) => s + (log.entries[item.id]?.completed ? item.points : 0), 0),
+    0
+  );
+  const coreMax = lowEnergyMode ? 100 : displayCoreModules.reduce((sum, mod) => sum + mod.items.reduce((s, i) => s + i.points, 0), 0);
+
+  const totalCoreItems = displayCoreModules.reduce((s, m) => s + m.items.length, 0);
+  const completedCoreItems = displayCoreModules.reduce(
     (s, m) => s + m.items.filter((item) => log.entries[item.id]?.completed).length, 0
   );
   const unfinishedCount = totalCoreItems - completedCoreItems;
