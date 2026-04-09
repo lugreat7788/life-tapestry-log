@@ -828,3 +828,61 @@ export async function getConsecutiveSkipDays(allLogs: Record<string, any>, itemI
   return streak;
 }
 
+// ─── Body Signals ───
+
+export interface BodySignal {
+  id: string;
+  userId: string;
+  date: string;
+  teeth: string;
+  eyes: string;
+  nose: string;
+  energy: number;
+  notes: string;
+}
+
+export async function getBodySignals(userId: string): Promise<BodySignal[]> {
+  const { data } = await supabase
+    .from("body_signals")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false });
+
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    userId: r.user_id,
+    date: r.date,
+    teeth: r.teeth,
+    eyes: r.eyes,
+    nose: r.nose,
+    energy: r.energy,
+    notes: r.notes || "",
+  }));
+}
+
+export async function saveBodySignal(
+  userId: string,
+  signal: { teeth: string; eyes: string; nose: string; energy: number; notes: string },
+  date?: Date
+) {
+  const dateStr = format(date || new Date(), "yyyy-MM-dd");
+
+  const { data: existing } = await supabase
+    .from("body_signals")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("date", dateStr)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("body_signals")
+      .update({ ...signal, updated_at: new Date().toISOString() } as any)
+      .eq("id", existing.id);
+  } else {
+    await supabase
+      .from("body_signals")
+      .insert({ user_id: userId, date: dateStr, ...signal } as any);
+  }
+}
+
