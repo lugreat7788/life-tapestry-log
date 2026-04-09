@@ -167,10 +167,10 @@ export default function HomePage() {
       </div>
 
       <h2 className="text-[9px] font-medium text-muted-foreground/60 mt-3 mb-2 uppercase tracking-[0.15em]">
-        每日必修
+        {lowEnergyMode ? "🔋 低能量模式 · 只需完成这些" : "每日必修"}
       </h2>
       <div className="grid gap-1.5">
-        {coreModules.map((mod, i) => (
+        {displayCoreModules.map((mod, i) => (
           <ModuleCard key={mod.key} module={mod} log={log} index={i} />
         ))}
       </div>
