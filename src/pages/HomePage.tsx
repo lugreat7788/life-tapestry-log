@@ -39,6 +39,7 @@ export default function HomePage() {
   const [allLogs, setAllLogs] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [showMilestone, setShowMilestone] = useState<number | null>(null);
+  const [lowEnergyMode] = useState(() => localStorage.getItem("lifelog_low_energy") === "true");
 
   const loadLog = useCallback(async () => {
     if (!user) return;
