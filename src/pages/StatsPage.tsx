@@ -652,6 +652,9 @@ export default function StatsPage() {
         </div>
       )}
 
+      {/* Mind-Body Correlation */}
+      <MindBodyCorrelation allLogs={allLogs} bodySignals={bodySignals} emotionRecords={emotionRecords} sleepData={sleepData} />
+
       {/* EV Insight Panel */}
       <EVInsightPanel allLogs={allLogs} modules={[...coreModules, ...bonusModules]} />
 
