@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      body_signals: {
+        Row: {
+          created_at: string
+          date: string
+          energy: number
+          eyes: string
+          id: string
+          nose: string
+          notes: string | null
+          teeth: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          energy?: number
+          eyes?: string
+          id?: string
+          nose?: string
+          notes?: string | null
+          teeth?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          energy?: number
+          eyes?: string
+          id?: string
+          nose?: string
+          notes?: string | null
+          teeth?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_logs: {
         Row: {
           created_at: string
