@@ -42,6 +42,7 @@ export const CORE_MODULES: Module[] = [
       { id: "daily_summary", name: "今日总结", points: 10 },
       { id: "tomorrow_plan", name: "明日计划", points: 10 },
       { id: "deep_reflection", name: "深度反思", points: 10 },
+      { id: "idea_capture", name: "灵感捕捉", points: 5 },
     ],
   },
   {
@@ -56,7 +57,8 @@ export const CORE_MODULES: Module[] = [
       { id: "diet_breakfast", name: "早餐记录", points: 3 },
       { id: "diet_lunch", name: "午餐记录", points: 3 },
       { id: "diet_dinner", name: "晚餐记录", points: 4 },
-      { id: "body_status", name: "身体状况", points: 5 },
+      { id: "body_status", name: "身体状况", points: 3 },
+      { id: "body_signal", name: "身体信号", points: 5 },
       { id: "sleep_log", name: "睡眠记录", points: 5 },
       { id: "exercise_log", name: "运动记录", points: 10 },
       { id: "bowel_log", name: "排便记录", points: 2 },
@@ -75,19 +77,7 @@ export const CORE_MODULES: Module[] = [
       { id: "english", name: "英语", points: 10 },
     ],
   },
-  {
-    key: "output",
-    name: "持续输出",
-    icon: "🎯",
-    tier: "core",
-    colorClass: "module-output",
-    bgClass: "bg-module-output",
-    fgClass: "text-module-output-fg",
-    items: [
-      { id: "wechat_article", name: "公众号文章", points: 10 },
-      { id: "video_content", name: "视频号内容", points: 10 },
-    ],
-  },
+  // output module removed from core daily tracking — items moved to long-term goals
 ];
 
 // Tier 2 — Bonus Score (额外加分，不设上限)
