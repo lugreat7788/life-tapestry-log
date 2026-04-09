@@ -686,18 +686,12 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                         : "border-muted-foreground/30 hover:border-primary/50"
                     )}
                   >
-                    <AnimatePresence>
-                      {isCompleted && !isMinimum && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                          <Check className="w-4 h-4 text-primary-foreground" />
-                        </motion.div>
-                      )}
-                      {isCompleted && isMinimum && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                          <Sprout className="w-3.5 h-3.5 text-primary-foreground" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {isCompleted && !isMinimum && (
+                      <Check className="w-4 h-4 text-primary-foreground" />
+                    )}
+                    {isCompleted && isMinimum && (
+                      <Sprout className="w-3.5 h-3.5 text-primary-foreground" />
+                    )}
                   </button>
 
                   <div className="flex-1 min-w-0">
