@@ -56,6 +56,7 @@ export const DEFAULT_PROMPTS: Record<string, string[]> = {
 export const QUICK_ENTRY_PROMPTS: Record<string, string> = {
   deep_reflection: "今天最重要的一个想法是？",
   daily_summary: "用一句话概括今天。",
+  idea_capture: "今天有什么想法值得未来写出来？一句话即可。",
   wechat_article: "写了什么？哪怕一句话的草稿也算。",
   video_content: "拍了什么？哪怕一个灵感记录也算。",
   reading: "读了什么？哪怕一页也行。",
