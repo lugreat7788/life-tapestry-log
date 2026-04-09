@@ -78,7 +78,6 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
     if (!user) return;
     const data = await getDailyLog(user.id, date);
     setLog(data);
-    // Update cache
     cache.updateDailyLogOptimistic(dateStr, () => data);
 
     if (data.id) {
@@ -94,6 +93,19 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
       });
       setPhotoUrls(urls);
       setFileUrls(fUrls);
+    }
+
+    // Load body signal for today
+    if (moduleKey === "health") {
+      const { data: bs } = await supabase
+        .from("body_signals")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", dateStr)
+        .maybeSingle();
+      if (bs) {
+        setBodySignal({ teeth: bs.teeth, eyes: bs.eyes, nose: bs.nose, energy: bs.energy, notes: bs.notes || "" });
+      }
     }
   }, [user, date, dateStr, cache]);
 
