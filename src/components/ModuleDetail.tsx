@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useTransition } from "react";
 import { format, subDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText, Sprout, Zap, AlertTriangle } from "lucide-react";
+import { Check, MessageSquare, Camera, X, Image as ImageIcon, Moon, Sun, Paperclip, FileText, Sprout, Zap, AlertTriangle, PenLine } from "lucide-react";
 import { getModuleMaxPoints } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 import { getDailyLog, toggleEntry, toggleEntryMinimum, updateEntryNotes, updateSleepTime, addSkipReason, getAllLogs, saveBodySignal } from "@/lib/supabase-store";
@@ -52,6 +52,8 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   const [skipReasonItem, setSkipReasonItem] = useState<string | null>(null);
   const [skipStreaks, setSkipStreaks] = useState<Record<string, number>>({});
   
+  const [freeNoteOpen, setFreeNoteOpen] = useState(false);
+  const [freeNoteText, setFreeNoteText] = useState("");
   const [floatingPoints, setFloatingPoints] = useState<Array<{ id: number; points: number; isMinimum: boolean; x: number; y: number }>>([]);
   const [showFullCelebration, setShowFullCelebration] = useState(false);
   const floatingIdRef = useRef(0);
@@ -142,6 +144,13 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
   }, [loadLog]);
 
   if (!module) return null;
+
+  const freeItemId = `${moduleKey}_freeform`;
+  const freeNoteContent = log.entries[freeItemId]?.notes || "";
+  const openFreeNote = () => {
+    setFreeNoteText(log.entries[freeItemId]?.notes || "");
+    setFreeNoteOpen(true);
+  };
 
   const getItemMinPoints = (itemId: string): number | null => {
     const modCfg = config?.modules?.[moduleKey];
@@ -636,6 +645,60 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
         )}
       </AnimatePresence>
 
+      {/* Freeform Note Modal */}
+      <AnimatePresence>
+        {freeNoteOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+            onClick={() => setFreeNoteOpen(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 380 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card rounded-t-2xl w-full max-w-lg p-5 pb-8"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <PenLine className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-semibold text-foreground">自由记录</p>
+                </div>
+                <button
+                  onClick={() => setFreeNoteOpen(false)}
+                  className="text-muted-foreground hover:text-foreground p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-4">
+                {module.icon} {module.name} · 随心记录，不被格式限制
+              </p>
+              <Textarea
+                autoFocus
+                placeholder="这里记录模块里没有定义的内容，想到什么写什么..."
+                value={freeNoteText}
+                onChange={(e) => {
+                  setFreeNoteText(e.target.value);
+                  handleNotes(freeItemId, e.target.value);
+                }}
+                className="min-h-[180px] resize-none mb-4"
+              />
+              <button
+                onClick={() => setFreeNoteOpen(false)}
+                className="w-full text-sm py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                完成
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="space-y-3">
         {module.items.map((item) => {
           const entry = log.entries[item.id];
@@ -1055,6 +1118,31 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
             </Drawer>
           );
         })}
+        {/* Freeform Note Card */}
+        <motion.button
+          onClick={openFreeNote}
+          whileTap={{ scale: 0.98 }}
+          className={cn(
+            "w-full text-left rounded-xl border-2 border-dashed px-4 py-3 transition-colors",
+            freeNoteContent
+              ? "border-primary/25 bg-primary/[0.03] hover:border-primary/40"
+              : "border-muted hover:border-muted-foreground/30"
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <PenLine className={cn("w-4 h-4 mt-0.5 shrink-0", freeNoteContent ? "text-primary/60" : "text-muted-foreground/40")} />
+            <div className="flex-1 min-w-0">
+              {freeNoteContent ? (
+                <>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">自由记录</p>
+                  <p className="text-xs text-foreground/70 leading-relaxed line-clamp-3">{freeNoteContent}</p>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic">随心写，记录模块里没有定义的内容…</p>
+              )}
+            </div>
+          </div>
+        </motion.button>
       </div>
     </div>
   );

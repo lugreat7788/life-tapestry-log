@@ -58,7 +58,8 @@ export function buildDayMarkdown(
   lines.push(`---`);
 
   const renderModule = (mod: Module) => {
-    const hasAnyEntry = mod.items.some((item) => log.entries[item.id]);
+    const freeEntry = log.entries[`${mod.key}_freeform`];
+    const hasAnyEntry = mod.items.some((item) => log.entries[item.id]) || !!freeEntry?.notes;
     if (!hasAnyEntry) return;
 
     lines.push(``);
@@ -98,14 +99,21 @@ export function buildDayMarkdown(
       lines.push(`- ${mark} ${label}${pts}`);
       if (entry.notes) lines.push(`  ${entry.notes}`);
     }
+
+    if (freeEntry?.notes) {
+      lines.push(``);
+      lines.push(`> ✍️ ${freeEntry.notes}`);
+    }
   };
 
   lines.push(``);
   lines.push(`## 每日必修`);
   for (const mod of coreModules) renderModule(mod);
 
-  const hasBonus = bonusModules.some((mod) =>
-    mod.items.some((item) => log.entries[item.id])
+  const hasBonus = bonusModules.some(
+    (mod) =>
+      mod.items.some((item) => log.entries[item.id]) ||
+      !!log.entries[`${mod.key}_freeform`]?.notes
   );
   if (hasBonus) {
     lines.push(``);
