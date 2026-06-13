@@ -548,9 +548,10 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
             onClick={() => setSkipReasonItem(null)}
           >
             <motion.div
-              initial={{ y: 100 }}
+              initial={{ y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: 100 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 380 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-card rounded-t-2xl w-full max-w-lg p-5 pb-8"
             >
@@ -585,9 +586,10 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
             onClick={() => { setQuickEntryItem(null); setQuickEntryText(""); }}
           >
             <motion.div
-              initial={{ y: 100 }}
+              initial={{ y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: 100 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 380 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-card rounded-t-2xl w-full max-w-lg p-5 pb-8"
             >
@@ -675,10 +677,12 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                 )}
 
                 <div className="flex items-center p-4 gap-3">
-                  <button
+                  <motion.button
                     onClick={(e) => handleToggle(item.id, item.points, e)}
+                    whileTap={{ scale: 0.78 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
                     className={cn(
-                      "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-200 shrink-0",
+                      "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors duration-150 shrink-0",
                       isCompleted && !isMinimum
                         ? "bg-primary border-primary"
                         : isCompleted && isMinimum
@@ -692,7 +696,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                     {isCompleted && isMinimum && (
                       <Sprout className="w-3.5 h-3.5 text-primary-foreground" />
                     )}
-                  </button>
+                  </motion.button>
 
                   <div className="flex-1 min-w-0">
                     <p className={cn("font-medium text-sm transition-all duration-200", isCompleted && !isMinimum && "line-through text-muted-foreground")}>
@@ -945,7 +949,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                         <label className="text-xs text-muted-foreground mb-1.5 block">智齿/口腔</label>
                         <div className="flex gap-2">
                           {["无", "轻微", "明显"].map((v) => (
-                            <button key={v} onClick={() => { const next = { ...bodySignal, teeth: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.teeth === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                            <button key={v} onClick={() => { const next = { ...bodySignal, teeth: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-all duration-100 active:scale-[0.93] ${bodySignal.teeth === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
                           ))}
                         </div>
                       </div>
@@ -953,7 +957,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                         <label className="text-xs text-muted-foreground mb-1.5 block">眼睛</label>
                         <div className="flex gap-2">
                           {["正常", "干涩", "疲劳"].map((v) => (
-                            <button key={v} onClick={() => { const next = { ...bodySignal, eyes: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.eyes === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                            <button key={v} onClick={() => { const next = { ...bodySignal, eyes: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-all duration-100 active:scale-[0.93] ${bodySignal.eyes === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
                           ))}
                         </div>
                       </div>
@@ -961,7 +965,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                         <label className="text-xs text-muted-foreground mb-1.5 block">鼻子/嗓子</label>
                         <div className="flex gap-2">
                           {["正常", "痒", "发炎"].map((v) => (
-                            <button key={v} onClick={() => { const next = { ...bodySignal, nose: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.nose === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                            <button key={v} onClick={() => { const next = { ...bodySignal, nose: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-all duration-100 active:scale-[0.93] ${bodySignal.nose === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
                           ))}
                         </div>
                       </div>
@@ -969,7 +973,7 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                         <label className="text-xs text-muted-foreground mb-1.5 block">整体精力</label>
                         <div className="flex gap-2">
                           {[1, 2, 3, 4, 5].map((v) => (
-                            <button key={v} onClick={() => { const next = { ...bodySignal, energy: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-colors ${bodySignal.energy === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
+                            <button key={v} onClick={() => { const next = { ...bodySignal, energy: v }; setBodySignal(next); if (user) saveBodySignal(user.id, next, date); }} className={`flex-1 py-2 rounded-lg text-sm transition-all duration-100 active:scale-[0.93] ${bodySignal.energy === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{v}</button>
                           ))}
                         </div>
                       </div>

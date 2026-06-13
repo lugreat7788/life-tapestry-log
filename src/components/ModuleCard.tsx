@@ -31,11 +31,12 @@ export default function ModuleCard({ module, log, index, showBonus }: ModuleCard
     <motion.button
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
+      whileTap={{ scale: 0.97 }}
       transition={{ delay: index * 0.03, duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
       onClick={() => navigate(`/modules/${module.key}`)}
       className={cn(
-        "w-full text-left rounded-2xl px-4 py-3 transition-all duration-200",
-        "bg-card shadow-card hover:shadow-elevated active:scale-[0.99]",
+        "w-full text-left rounded-2xl px-4 py-3 transition-colors",
+        "bg-card shadow-card hover:shadow-elevated",
         allDone && "ring-1 ring-primary/15",
         showBonus && "border border-dashed border-muted-foreground/10"
       )}

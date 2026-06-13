@@ -91,6 +91,10 @@
     @apply font-display;
     letter-spacing: -0.02em;
   }
+
+  button, [role="button"] {
+    touch-action: manipulation;
+  }
 }
 
 @layer utilities {
