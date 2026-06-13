@@ -930,81 +930,127 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                       )}
                     </div>
                   )}
-                  {item.id === "bowel_log" && (
-                    <div className="mb-4 space-y-3">
-                      <p className="text-xs text-muted-foreground">记录排便情况，帮助了解身体健康状态</p>
-                      <div className="grid grid-cols-2 gap-3">
+                  {item.id === "bowel_log" && (() => {
+                    const bowel: Record<string, string> = (() => {
+                      try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; }
+                    })();
+                    const updateBowel = (key: string, val: string) =>
+                      handleNotes(item.id, JSON.stringify({ ...bowel, [key]: val }));
+
+                    const COLORS = [
+                      { val: "黄色", emoji: "🟡", label: "黄色", sub: "正常" },
+                      { val: "深棕色", emoji: "🟤", label: "深棕", sub: "正常" },
+                      { val: "浅棕色", emoji: "🟠", label: "浅棕", sub: "" },
+                      { val: "绿色", emoji: "🟢", label: "绿色", sub: "" },
+                      { val: "黑色", emoji: "⚫", label: "黑色", sub: "⚠️" },
+                      { val: "红色", emoji: "🔴", label: "红色", sub: "⚠️" },
+                      { val: "白色/灰色", emoji: "⚪", label: "白/灰", sub: "⚠️" },
+                    ];
+                    const FORMS = [
+                      { val: "硬块", label: "硬块", sub: "💎 便秘" },
+                      { val: "香肠状有裂纹", label: "有裂纹", sub: "🌭 偏干" },
+                      { val: "香肠状光滑", label: "光滑", sub: "✨ 理想" },
+                      { val: "软块", label: "软块", sub: "🫧" },
+                      { val: "糊状", label: "糊状", sub: "💦 偏稀" },
+                      { val: "水样", label: "水样", sub: "💧 腹泻" },
+                    ];
+                    const FEELINGS = [
+                      { val: "顺畅", emoji: "😊" },
+                      { val: "费力", emoji: "😤" },
+                      { val: "未排尽", emoji: "😕" },
+                      { val: "腹痛", emoji: "😣" },
+                    ];
+                    const isFeelingChip = FEELINGS.some(f => f.val === bowel.feeling);
+
+                    return (
+                      <div className="mb-4 space-y-4">
+                        <p className="text-[11px] text-muted-foreground">记录排便情况，帮助发现肠道规律</p>
+
+                        {/* 时间 */}
                         <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">排便时间</label>
+                          <p className="text-xs text-muted-foreground mb-1.5">排便时间</p>
                           <Input
                             type="time"
-                            defaultValue={(() => {
-                              try {
-                                const parsed = JSON.parse(entry?.notes || "{}");
-                                return parsed.time || "";
-                              } catch { return ""; }
-                            })()}
-                            onBlur={(e) => {
-                              const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
-                              handleNotes(item.id, JSON.stringify({ ...prev, time: e.target.value }));
-                            }}
-                            className="w-full"
+                            defaultValue={bowel.time || ""}
+                            onBlur={(e) => updateBowel("time", e.target.value)}
+                            className="w-36"
                           />
                         </div>
+
+                        {/* 颜色 */}
                         <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">颜色</label>
-                          <select
-                            defaultValue={(() => { try { return JSON.parse(entry?.notes || "{}").color || ""; } catch { return ""; } })()}
-                            onChange={(e) => {
-                              const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
-                              handleNotes(item.id, JSON.stringify({ ...prev, color: e.target.value }));
-                            }}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <option value="">选择颜色</option>
-                            <option value="黄色">🟡 黄色（正常）</option>
-                            <option value="深棕色">🟤 深棕色（正常）</option>
-                            <option value="浅棕色">🟠 浅棕色</option>
-                            <option value="绿色">🟢 绿色</option>
-                            <option value="黑色">⚫ 黑色</option>
-                            <option value="红色">🔴 红色</option>
-                            <option value="白色/灰色">⚪ 白色/灰色</option>
-                          </select>
+                          <p className="text-xs text-muted-foreground mb-1.5">颜色</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {COLORS.map(({ val, emoji, label, sub }) => (
+                              <button
+                                key={val}
+                                onClick={() => updateBowel("color", bowel.color === val ? "" : val)}
+                                className={cn(
+                                  "flex flex-col items-center gap-0.5 flex-1 min-w-[42px] py-2 rounded-xl text-[10px] transition-all duration-100 active:scale-[0.93]",
+                                  bowel.color === val
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                )}
+                              >
+                                <span className="text-lg leading-none">{emoji}</span>
+                                <span className="font-medium">{label}</span>
+                                {sub && <span className="opacity-60">{sub}</span>}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 形态 */}
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1.5">形态（Bristol 分级）</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {FORMS.map(({ val, label, sub }) => (
+                              <button
+                                key={val}
+                                onClick={() => updateBowel("form", bowel.form === val ? "" : val)}
+                                className={cn(
+                                  "flex flex-col items-center gap-0.5 py-2.5 rounded-xl text-xs transition-all duration-100 active:scale-[0.93]",
+                                  bowel.form === val
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                )}
+                              >
+                                <span className="font-medium">{label}</span>
+                                <span className="text-[9px] opacity-70">{sub}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 感受 */}
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1.5">感受</p>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {FEELINGS.map(({ val, emoji }) => (
+                              <button
+                                key={val}
+                                onClick={() => updateBowel("feeling", bowel.feeling === val ? "" : val)}
+                                className={cn(
+                                  "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition-all duration-100 active:scale-[0.93]",
+                                  bowel.feeling === val
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                )}
+                              >
+                                {emoji} {val}
+                              </button>
+                            ))}
+                          </div>
+                          <Textarea
+                            placeholder="其他感受..."
+                            defaultValue={isFeelingChip ? "" : (bowel.feeling || "")}
+                            onBlur={(e) => { if (e.target.value.trim()) updateBowel("feeling", e.target.value.trim()); }}
+                            className="min-h-[50px] resize-none"
+                          />
                         </div>
                       </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">形态</label>
-                        <select
-                          defaultValue={(() => { try { return JSON.parse(entry?.notes || "{}").form || ""; } catch { return ""; } })()}
-                          onChange={(e) => {
-                            const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
-                            handleNotes(item.id, JSON.stringify({ ...prev, form: e.target.value }));
-                          }}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <option value="">选择形态</option>
-                          <option value="硬块">硬块（便秘）</option>
-                          <option value="香肠状有裂纹">香肠状有裂纹</option>
-                          <option value="香肠状光滑">香肠状光滑（理想）</option>
-                          <option value="软块">软块</option>
-                          <option value="糊状">糊状</option>
-                          <option value="水样">水样（腹泻）</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">感受</label>
-                        <Textarea
-                          placeholder="排便是否顺畅？有无不适？"
-                          defaultValue={(() => { try { return JSON.parse(entry?.notes || "{}").feeling || ""; } catch { return ""; } })()}
-                          onBlur={(e) => {
-                            const prev = (() => { try { return JSON.parse(entry?.notes || "{}"); } catch { return {}; } })();
-                            handleNotes(item.id, JSON.stringify({ ...prev, feeling: e.target.value }));
-                          }}
-                          className="min-h-[60px] resize-none"
-                        />
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                   {item.id === "body_signal" && (
                     <div className="mb-4 space-y-3">
                       <p className="text-xs text-muted-foreground">30秒快速记录身体信号，帮助发现健康模式</p>
