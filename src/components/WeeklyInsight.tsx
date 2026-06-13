@@ -3,7 +3,7 @@ import { format, subDays } from "date-fns";
 import { BookOpen, Loader2, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { getEmotionRecords, getGoals, getSleepData } from "@/lib/supabase-store";
+import { getEmotionRecords, getGoals, getSleepData, saveInsight } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import type { Module } from "@/lib/modules";
 
@@ -208,6 +208,7 @@ export default function WeeklyInsight({ allLogs, coreModules, bonusModules }: We
 
         setReview(data.review);
         setCache(weekKey, data.review);
+        saveInsight(user.id, "weekly", weekKey, data.review).catch(() => {});
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "生成失败，请稍后重试";
         setError(msg);

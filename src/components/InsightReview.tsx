@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { getEmotionRecords, getGoals, getSleepData } from "@/lib/supabase-store";
+import { getEmotionRecords, getGoals, getSleepData, saveInsight } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import type { DailyLog } from "@/lib/store-types";
 import type { Module } from "@/lib/modules";
@@ -293,6 +293,7 @@ export default function InsightReview({ log, coreModules, bonusModules }: Insigh
 
         setInsight(data.insight);
         setCache(today, data.insight);
+        saveInsight(user.id, "daily", today, data.insight).catch(() => {});
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "生成失败，请稍后重试";
         setError(msg);

@@ -886,3 +886,52 @@ export async function saveBodySignal(
   }
 }
 
+// ─── AI Insights ───
+
+export interface AiInsight {
+  id: string;
+  type: "daily" | "weekly";
+  period: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function saveInsight(
+  userId: string,
+  type: "daily" | "weekly",
+  period: string,
+  content: string
+): Promise<void> {
+  await (supabase as any)
+    .from("ai_insights")
+    .upsert(
+      { user_id: userId, type, period, content, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,type,period" }
+    );
+}
+
+export async function getInsights(
+  userId: string,
+  type?: "daily" | "weekly"
+): Promise<AiInsight[]> {
+  let query = (supabase as any)
+    .from("ai_insights")
+    .select("*")
+    .eq("user_id", userId)
+    .order("period", { ascending: false })
+    .limit(60);
+
+  if (type) query = query.eq("type", type);
+
+  const { data } = await query;
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    type: r.type,
+    period: r.period,
+    content: r.content,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  }));
+}
+

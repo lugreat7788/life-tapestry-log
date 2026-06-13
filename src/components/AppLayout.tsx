@@ -1,11 +1,12 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, LayoutGrid, Heart, BarChart3, Settings } from "lucide-react";
+import { Home, LayoutGrid, Heart, BarChart3, Settings, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, label: "必修" },
   { path: "/modules", icon: LayoutGrid, label: "加分" },
   { path: "/goals", icon: Heart, label: "心灵" },
+  { path: "/insights", icon: Sparkles, label: "芦苇" },
   { path: "/stats", icon: BarChart3, label: "统计" },
   { path: "/settings", icon: Settings, label: "设置" },
 ];
@@ -21,7 +22,7 @@ export default function AppLayout() {
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-card/85 glass border-t border-border/40 safe-bottom z-50">
-        <div className="flex items-center justify-around h-[4rem] max-w-lg mx-auto px-3">
+        <div className="flex items-center justify-around h-[4rem] max-w-lg mx-auto px-0">
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.path === "/"
@@ -32,13 +33,13 @@ export default function AppLayout() {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-[3px] w-16 h-14 rounded-xl transition-all duration-200",
+                  "flex flex-col items-center justify-center gap-[3px] w-12 h-14 rounded-xl transition-all duration-200",
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground/70 hover:text-foreground/80"
                 )}
               >
-                <item.icon className={cn("w-[27px] h-[27px] transition-all", isActive ? "stroke-[2.2]" : "stroke-[1.6]")} />
+                <item.icon className={cn("w-[22px] h-[22px] transition-all", isActive ? "stroke-[2.2]" : "stroke-[1.6]")} />
                 <span className="text-[10px] font-medium tracking-wider">{item.label}</span>
               </button>
             );
