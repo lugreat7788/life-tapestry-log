@@ -1,20 +1,21 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, FileText, Sparkles } from "lucide-react";
 import { format, parse } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
 import ModuleDetail from "@/components/ModuleDetail";
 import type { ModuleKey } from "@/lib/modules";
 import { useAuth } from "@/hooks/useAuth";
-import { getDailyLog } from "@/lib/supabase-store";
-import { buildDayMarkdown, downloadMarkdown } from "@/lib/export";
+import { getDailyLog, getInsights, type AiInsight } from "@/lib/supabase-store";
+import { buildDayMarkdown, downloadMarkdown, insightToMarkdown } from "@/lib/export";
 
 export default function HistoryEditPage() {
   const { dateStr } = useParams<{ dateStr: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [logData, setLogData] = useState<any>(null);
+  const [insightData, setInsightData] = useState<AiInsight | null>(null);
 
   const date = dateStr ? parse(dateStr, "yyyy-MM-dd", new Date()) : new Date();
   const isToday = dateStr === format(new Date(), "yyyy-MM-dd");
@@ -27,14 +28,22 @@ export default function HistoryEditPage() {
         setLogData(log);
       }
     });
+    getInsights(user.id, "daily").then((insights) => {
+      setInsightData(insights.find((ins) => ins.period === dateStr) ?? null);
+    });
   }, [user, dateStr]);
 
   if (!dateStr) return null;
 
-  const handleExport = () => {
+  const handleExportLog = () => {
     if (!logData) return;
     const md = buildDayMarkdown(logData, date, CORE_MODULES, BONUS_MODULES);
-    downloadMarkdown(`LifeLog_${dateStr}.md`, md);
+    downloadMarkdown(`LifeLog_记录_${dateStr}.md`, md);
+  };
+
+  const handleExportInsight = () => {
+    if (!insightData) return;
+    downloadMarkdown(`LifeLog_洞察_${dateStr}.md`, insightToMarkdown(insightData));
   };
 
   return (
@@ -48,16 +57,26 @@ export default function HistoryEditPage() {
             <ArrowLeft className="w-4 h-4" />
             返回统计
           </button>
-          {logData && (
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted px-3 py-1.5 rounded-lg transition-colors"
-              title="导出为 Markdown"
-            >
-              <Download className="w-3.5 h-3.5" />
-              导出 MD
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {logData && (
+              <button
+                onClick={handleExportLog}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                导出记录
+              </button>
+            )}
+            {insightData && (
+              <button
+                onClick={handleExportInsight}
+                className="flex items-center gap-1.5 text-xs text-primary/80 hover:text-primary bg-primary/10 hover:bg-primary/15 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                导出洞察
+              </button>
+            )}
+          </div>
         </div>
         <h1 className="text-lg font-display font-bold text-foreground mt-3">
           {isToday ? "今天" : displayDate}

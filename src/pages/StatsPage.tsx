@@ -4,12 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { MODULES, CORE_MODULES, BONUS_MODULES } from "@/lib/modules";
-import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals, getSkipReasons, getBodySignals } from "@/lib/supabase-store";
-import type { BodySignal } from "@/lib/supabase-store";
+import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoints, getEmotionRecords, getRelationshipRecords, getGoals, getSkipReasons, getBodySignals, getInsights } from "@/lib/supabase-store";
+import type { BodySignal, AiInsight } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
-import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2, Download } from "lucide-react";
-import { buildDayMarkdown, downloadMarkdown } from "@/lib/export";
+import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2, Sparkles } from "lucide-react";
+import { buildDayMarkdown, downloadMarkdown, insightToMarkdown } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,7 @@ export default function StatsPage() {
   const [allTimePoints, setAllTimePoints] = useState(0);
   const [skipReasons, setSkipReasons] = useState<Array<{ id: string; item_id: string; reason: string; date: string }>>([]);
   const [bodySignals, setBodySignals] = useState<BodySignal[]>([]);
+  const [allInsights, setAllInsights] = useState<AiInsight[]>([]);
   const { coreModules, bonusModules } = useModuleConfig();
 
   useEffect(() => {
@@ -70,7 +71,8 @@ export default function StatsPage() {
       getAllTimePoints(user.id),
       getSkipReasons(user.id),
       getBodySignals(user.id),
-    ]).then(([logs, wp, s, sd, er, rr, gl, atp, sr, bs]) => {
+      getInsights(user.id, "daily"),
+    ]).then(([logs, wp, s, sd, er, rr, gl, atp, sr, bs, ins]) => {
       setAllLogs(logs);
       setWeekPoints(wp);
       setStreak(s);
@@ -81,6 +83,7 @@ export default function StatsPage() {
       setAllTimePoints(atp);
       setSkipReasons(sr as any);
       setBodySignals(bs);
+      setAllInsights(ins as AiInsight[]);
       setLoading(false);
     });
   }, [user]);
@@ -292,11 +295,20 @@ export default function StatsPage() {
   };
 
   const selectedDateLog = selectedDate ? allLogs[format(selectedDate, "yyyy-MM-dd")] : null;
+  const selectedDateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
+  const selectedDayInsight = selectedDateStr
+    ? allInsights.find((ins) => ins.period === selectedDateStr) ?? null
+    : null;
 
   const handleExportDay = () => {
     if (!selectedDateLog || !selectedDate) return;
     const md = buildDayMarkdown(selectedDateLog, selectedDate, coreModules, bonusModules);
-    downloadMarkdown(`LifeLog_${format(selectedDate, "yyyy-MM-dd")}.md`, md);
+    downloadMarkdown(`LifeLog_记录_${format(selectedDate, "yyyy-MM-dd")}.md`, md);
+  };
+
+  const handleExportInsight = () => {
+    if (!selectedDayInsight || !selectedDateStr) return;
+    downloadMarkdown(`LifeLog_洞察_${selectedDateStr}.md`, insightToMarkdown(selectedDayInsight));
   };
 
   const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -484,20 +496,9 @@ export default function StatsPage() {
                 <h2 className="text-sm font-semibold text-foreground">
                   {format(selectedDate, "M月d日 EEEE", { locale: zhCN })}
                 </h2>
-                <div className="flex items-center gap-0.5">
-                  {selectedDateLog && (
-                    <button
-                      onClick={handleExportDay}
-                      className="text-muted-foreground hover:text-foreground p-1"
-                      title="导出为 Markdown"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  )}
-                  <button onClick={() => setSelectedDate(null)} className="text-muted-foreground hover:text-foreground p-1">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <button onClick={() => setSelectedDate(null)} className="text-muted-foreground hover:text-foreground p-1">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {!selectedDateLog ? (
@@ -608,15 +609,35 @@ export default function StatsPage() {
                 </div>
               )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-3 rounded-full"
-                onClick={() => navigate(`/stats/date/${format(selectedDate, "yyyy-MM-dd")}`)}
-              >
-                <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-                修改记录
-              </Button>
+              <div className="flex gap-2 mt-3">
+                {selectedDateLog && (
+                  <button
+                    onClick={handleExportDay}
+                    className="flex items-center justify-center gap-1.5 flex-1 text-xs text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted py-2 rounded-full transition-colors"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    导出记录
+                  </button>
+                )}
+                {selectedDayInsight && (
+                  <button
+                    onClick={handleExportInsight}
+                    className="flex items-center justify-center gap-1.5 flex-1 text-xs text-primary/80 hover:text-primary bg-primary/10 hover:bg-primary/15 py-2 rounded-full transition-colors"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    导出洞察
+                  </button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-full"
+                  onClick={() => navigate(`/stats/date/${format(selectedDate, "yyyy-MM-dd")}`)}
+                >
+                  <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                  修改记录
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}

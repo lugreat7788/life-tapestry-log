@@ -2,6 +2,57 @@ import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import type { Module } from "@/lib/modules";
 
+// ─── Insight helpers (shared with InsightsPage) ───────────────────────────
+
+export function contentToMarkdown(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => {
+      if (line.startsWith("▸ ")) return `- ${line.slice(2)}`;
+      if (line.startsWith("— ")) return `> ${line.slice(2)}`;
+      return line;
+    })
+    .join("\n");
+}
+
+function formatDailyPeriod(period: string): string {
+  try {
+    return format(new Date(period + "T12:00:00"), "yyyy年M月d日 EEEE", { locale: zhCN });
+  } catch { return period; }
+}
+
+function formatWeeklyPeriod(period: string): string {
+  const [start, end] = period.split("_");
+  try {
+    return `${format(new Date(start + "T12:00:00"), "M/d")} ~ ${format(new Date(end + "T12:00:00"), "M/d")}`;
+  } catch { return period; }
+}
+
+export function insightToMarkdown(insight: {
+  type: string;
+  period: string;
+  content: string;
+  updatedAt: string;
+}): string {
+  const isDaily = insight.type === "daily";
+  const label = isDaily
+    ? formatDailyPeriod(insight.period)
+    : `${formatWeeklyPeriod(insight.period)} 周回顾`;
+  return [
+    `# ${isDaily ? "芦苇 · 今日洞察" : "芦苇 · 每周回顾"}`,
+    ``,
+    `**${label}**`,
+    ``,
+    `---`,
+    ``,
+    contentToMarkdown(insight.content),
+    ``,
+    `---`,
+    ``,
+    `*由 LifeLog 芦苇 AI 生成 · ${format(new Date(insight.updatedAt), "yyyy-MM-dd")}*`,
+  ].join("\n");
+}
+
 // ─── Download helper ───────────────────────────────────────────────────────
 
 export function downloadMarkdown(filename: string, content: string): void {

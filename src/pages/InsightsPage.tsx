@@ -7,8 +7,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { getInsights, type AiInsight } from "@/lib/supabase-store";
 import { cn } from "@/lib/utils";
+import { contentToMarkdown, insightToMarkdown, downloadMarkdown } from "@/lib/export";
 
-// ─── Shared insight renderer (mirrors InsightReview / WeeklyInsight) ───
+// ─── Shared insight renderer ───
 
 function InsightContent({ text }: { text: string }) {
   return (
@@ -64,36 +65,7 @@ function weeklyLabel(period: string): string {
   }
 }
 
-// ─── Markdown export helpers ───
-
-function contentToMarkdown(content: string): string {
-  return content
-    .split("\n")
-    .map((line) => {
-      if (line.startsWith("▸ ")) return `- ${line.slice(2)}`;
-      if (line.startsWith("— ")) return `> ${line.slice(2)}`;
-      return line;
-    })
-    .join("\n");
-}
-
-function insightToMarkdown(insight: AiInsight): string {
-  const isDaily = insight.type === "daily";
-  const label = isDaily ? dailyLabel(insight.period) : `${weeklyLabel(insight.period)} 周回顾`;
-  return [
-    `# ${isDaily ? "芦苇 · 今日洞察" : "芦苇 · 每周回顾"}`,
-    ``,
-    `**${label}**`,
-    ``,
-    `---`,
-    ``,
-    contentToMarkdown(insight.content),
-    ``,
-    `---`,
-    ``,
-    `*由 LifeLog 芦苇 AI 生成 · ${format(new Date(insight.updatedAt), "yyyy-MM-dd")}*`,
-  ].join("\n");
-}
+// ─── Batch download ───
 
 function downloadAllMarkdown(insights: AiInsight[], typeLabel: string): void {
   const sections = insights.map((ins) => {
@@ -113,17 +85,7 @@ function downloadAllMarkdown(insights: AiInsight[], typeLabel: string): void {
     ``,
     `*由 LifeLog 芦苇 AI 生成*`,
   ].join("\n");
-
-  const filename = `芦苇日志_${typeLabel}_${format(new Date(), "yyyyMMdd")}.md`;
-  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadMarkdown(`芦苇日志_${typeLabel}_${format(new Date(), "yyyyMMdd")}.md`, content);
 }
 
 // ─── Insight card ───
