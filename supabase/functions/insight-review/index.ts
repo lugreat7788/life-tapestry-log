@@ -60,10 +60,10 @@ serve(async (req) => {
     return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
   }
 
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) {
     return new Response(
-      JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
+      JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }),
       { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
@@ -86,17 +86,18 @@ serve(async (req) => {
   }
 
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1024,
+        system: SYSTEM_PROMPT,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: body.prompt },
         ],
       }),
@@ -104,7 +105,13 @@ serve(async (req) => {
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error("AI API error:", res.status, errText);
+      console.error("Anthropic API error:", res.status, errText);
+      if (res.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "请求过于频繁，请稍后再试" }),
+          { status: 429, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({ error: `AI API error: ${res.status}`, detail: errText }),
         { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
@@ -112,7 +119,7 @@ serve(async (req) => {
     }
 
     const data = await res.json();
-    const text: string = data.choices?.[0]?.message?.content ?? "";
+    const text: string = data.content?.[0]?.text ?? "";
 
     return new Response(
       JSON.stringify({ insight: text }),
