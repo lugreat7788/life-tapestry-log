@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { Sparkles, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, BookOpen, ChevronDown, ChevronUp, Copy, Check, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { getInsights, type AiInsight } from "@/lib/supabase-store";
 import { cn } from "@/lib/utils";
@@ -63,10 +64,85 @@ function weeklyLabel(period: string): string {
   }
 }
 
+// ─── Markdown export helpers ───
+
+function contentToMarkdown(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => {
+      if (line.startsWith("▸ ")) return `- ${line.slice(2)}`;
+      if (line.startsWith("— ")) return `> ${line.slice(2)}`;
+      return line;
+    })
+    .join("\n");
+}
+
+function insightToMarkdown(insight: AiInsight): string {
+  const isDaily = insight.type === "daily";
+  const label = isDaily ? dailyLabel(insight.period) : `${weeklyLabel(insight.period)} 周回顾`;
+  return [
+    `# ${isDaily ? "芦苇 · 今日洞察" : "芦苇 · 每周回顾"}`,
+    ``,
+    `**${label}**`,
+    ``,
+    `---`,
+    ``,
+    contentToMarkdown(insight.content),
+    ``,
+    `---`,
+    ``,
+    `*由 LifeLog 芦苇 AI 生成 · ${format(new Date(insight.updatedAt), "yyyy-MM-dd")}*`,
+  ].join("\n");
+}
+
+function downloadAllMarkdown(insights: AiInsight[], typeLabel: string): void {
+  const sections = insights.map((ins) => {
+    const label = ins.type === "daily" ? dailyLabel(ins.period) : weeklyLabel(ins.period);
+    return [`## ${label}`, ``, contentToMarkdown(ins.content)].join("\n");
+  });
+  const content = [
+    `# 芦苇日志 · ${typeLabel}`,
+    ``,
+    `导出时间：${format(new Date(), "yyyy-MM-dd HH:mm")}　共 ${insights.length} 篇`,
+    ``,
+    `---`,
+    ``,
+    sections.join("\n\n---\n\n"),
+    ``,
+    `---`,
+    ``,
+    `*由 LifeLog 芦苇 AI 生成*`,
+  ].join("\n");
+
+  const filename = `芦苇日志_${typeLabel}_${format(new Date(), "yyyyMMdd")}.md`;
+  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ─── Insight card ───
 
 function InsightCard({ insight }: { insight: AiInsight }) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(insightToMarkdown(insight));
+      setCopied(true);
+      toast.success("已复制 Markdown");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("复制失败，请手动选择文本");
+    }
+  };
 
   const preview = insight.content
     .replace(/###[^\n]*/g, "")
@@ -124,8 +200,24 @@ function InsightCard({ insight }: { insight: AiInsight }) {
             transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-5 pt-0">
+            <div className="px-4 pb-4 pt-0">
               <InsightContent text={insight.content} />
+              <div className="mt-4 pt-3 border-t border-border/50 flex justify-end">
+                <button
+                  onClick={handleCopy}
+                  className={cn(
+                    "flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg transition-all",
+                    copied
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  )}
+                >
+                  {copied
+                    ? <><Check className="w-3 h-3" />已复制</>
+                    : <><Copy className="w-3 h-3" />复制 Markdown</>
+                  }
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -153,9 +245,21 @@ export default function InsightsPage() {
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <div className="mb-5">
-        <h1 className="text-2xl font-display font-bold text-foreground">芦苇日志</h1>
-        <p className="text-[11px] text-muted-foreground/60 mt-0.5">AI 生成的洞察与回顾，自动保存</p>
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">芦苇日志</h1>
+          <p className="text-[11px] text-muted-foreground/60 mt-0.5">AI 生成的洞察与回顾，自动保存</p>
+        </div>
+        {insights.length > 0 && (
+          <button
+            onClick={() => downloadAllMarkdown(insights, tab === "daily" ? "每日洞察" : "每周回顾")}
+            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted px-3 py-2 rounded-lg transition-colors mt-1"
+            title="导出为 Markdown 文件"
+          >
+            <Download className="w-3.5 h-3.5" />
+            导出
+          </button>
+        )}
       </div>
 
       {/* Tab switcher */}
