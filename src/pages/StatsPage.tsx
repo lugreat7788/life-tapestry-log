@@ -8,7 +8,8 @@ import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoint
 import type { BodySignal } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
-import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2 } from "lucide-react";
+import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2, Download } from "lucide-react";
+import { buildDayMarkdown, downloadMarkdown } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -292,6 +293,12 @@ export default function StatsPage() {
 
   const selectedDateLog = selectedDate ? allLogs[format(selectedDate, "yyyy-MM-dd")] : null;
 
+  const handleExportDay = () => {
+    if (!selectedDateLog || !selectedDate) return;
+    const md = buildDayMarkdown(selectedDateLog, selectedDate, coreModules, bonusModules);
+    downloadMarkdown(`LifeLog_${format(selectedDate, "yyyy-MM-dd")}.md`, md);
+  };
+
   const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 
   if (loading) {
@@ -477,9 +484,20 @@ export default function StatsPage() {
                 <h2 className="text-sm font-semibold text-foreground">
                   {format(selectedDate, "M月d日 EEEE", { locale: zhCN })}
                 </h2>
-                <button onClick={() => setSelectedDate(null)} className="text-muted-foreground hover:text-foreground p-1">
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-0.5">
+                  {selectedDateLog && (
+                    <button
+                      onClick={handleExportDay}
+                      className="text-muted-foreground hover:text-foreground p-1"
+                      title="导出为 Markdown"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button onClick={() => setSelectedDate(null)} className="text-muted-foreground hover:text-foreground p-1">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {!selectedDateLog ? (
