@@ -146,6 +146,21 @@ export function buildDayMarkdown(
         continue;
       }
 
+      // Body status: stored as JSON {tags, note}
+      if (item.id === "body_status") {
+        lines.push(`- ${mark} ${label}${pts}`);
+        if (entry.notes) {
+          try {
+            const p = JSON.parse(entry.notes);
+            if (p.tags?.length) lines.push(`  ${p.tags.join(" · ")}`);
+            if (p.note) lines.push(`  ${p.note}`);
+          } catch {
+            lines.push(`  ${entry.notes}`);
+          }
+        }
+        continue;
+      }
+
       // Default
       lines.push(`- ${mark} ${label}${pts}`);
       if (entry.notes) lines.push(`  ${entry.notes}`);

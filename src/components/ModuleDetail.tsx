@@ -1092,9 +1092,57 @@ export default function ModuleDetail({ moduleKey, date }: ModuleDetailProps) {
                       </div>
                     </div>
                   )}
-                  {item.id !== "bowel_log" && item.id !== "body_signal" && (
+                  {item.id === "body_status" && (() => {
+                    const STATUS_TAGS = [
+                      "精力充沛", "睡眠轻微不足", "睡眠不足",
+                      "轻度鼻炎", "鼻炎", "眼睛干痒",
+                      "轻微齿痕舌", "齿痕舌", "嗓子轻微干痒", "嗓子干痒",
+                    ];
+                    const parsed: { tags: string[]; note: string } = (() => {
+                      try {
+                        const p = JSON.parse(entry?.notes || "{}");
+                        return { tags: Array.isArray(p.tags) ? p.tags : [], note: p.note || "" };
+                      } catch { return { tags: [], note: entry?.notes || "" }; }
+                    })();
+                    const saveStatus = (tags: string[], note: string) =>
+                      handleNotes(item.id, JSON.stringify({ tags, note }));
+                    const toggleTag = (tag: string) => {
+                      const next = parsed.tags.includes(tag)
+                        ? parsed.tags.filter((t) => t !== tag)
+                        : [...parsed.tags, tag];
+                      saveStatus(next, parsed.note);
+                    };
+                    return (
+                      <div className="mb-4 space-y-3">
+                        <p className="text-[11px] text-muted-foreground">可多选，记录今日身体状态</p>
+                        <div className="flex flex-wrap gap-2">
+                          {STATUS_TAGS.map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={() => toggleTag(tag)}
+                              className={cn(
+                                "px-3 py-1.5 rounded-full text-xs transition-all duration-100 active:scale-[0.93]",
+                                parsed.tags.includes(tag)
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              )}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                        <Textarea
+                          placeholder="其他备注（体重、具体症状等）..."
+                          defaultValue={parsed.note}
+                          onBlur={(e) => saveStatus(parsed.tags, e.target.value)}
+                          className="min-h-[80px] resize-none"
+                        />
+                      </div>
+                    );
+                  })()}
+                  {item.id !== "bowel_log" && item.id !== "body_signal" && item.id !== "body_status" && (
                   <Textarea
-                    placeholder={isDietItem(item.id) ? "记录饮食内容、热量等..." : item.id === "body_status" ? "记录今日身体状况、体重、症状等..." : item.id === "sleep_log" ? "记录睡眠质量、梦境等..." : item.id === "idea_capture" ? "今天有什么想法值得未来写出来？一句话即可。" : "记录你的心得、感想..."}
+                    placeholder={isDietItem(item.id) ? "记录饮食内容、热量等..." : item.id === "sleep_log" ? "记录睡眠质量、梦境等..." : item.id === "idea_capture" ? "今天有什么想法值得未来写出来？一句话即可。" : "记录你的心得、感想..."}
                     defaultValue={entry?.notes || ""}
                     onBlur={(e) => handleNotes(item.id, e.target.value)}
                     className="min-h-[120px] resize-none"
