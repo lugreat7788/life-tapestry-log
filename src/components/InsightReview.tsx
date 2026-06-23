@@ -7,6 +7,7 @@ import { getEmotionRecords, getGoals, getSleepData, saveInsight } from "@/lib/su
 import { useAuth } from "@/hooks/useAuth";
 import type { DailyLog } from "@/lib/store-types";
 import type { Module } from "@/lib/modules";
+import InsightContent from "@/components/InsightContent";
 
 interface InsightReviewProps {
   log: DailyLog;
@@ -180,50 +181,6 @@ function buildPrompt(
   lines.push("", "请按格式给出今日洞察。");
 
   return lines.join("\n");
-}
-
-// ─── Render insight text (simple markdown-like) ───
-
-function InsightContent({ text }: { text: string }) {
-  // Split into lines and render with light formatting
-  const lines = text.split("\n");
-
-  return (
-    <div className="space-y-1.5 text-[12px] leading-relaxed text-foreground/85">
-      {lines.map((line, i) => {
-        if (line.startsWith("### ")) {
-          return (
-            <p key={i} className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mt-3 mb-1 first:mt-0">
-              {line.replace("### ", "")}
-            </p>
-          );
-        }
-        if (line.startsWith("— ") || line.startsWith("—")) {
-          return (
-            <p key={i} className="text-foreground/90 pl-2 border-l-2 border-primary/40 py-0.5">
-              {line}
-            </p>
-          );
-        }
-        if (line.startsWith("▸ ")) {
-          const parts = line.replace("▸ ", "").split(" — ");
-          return (
-            <p key={i} className="flex gap-1.5">
-              <span className="text-primary shrink-0 mt-px">▸</span>
-              <span>
-                {parts[0]}
-                {parts[1] && (
-                  <span className="text-muted-foreground"> — {parts[1]}</span>
-                )}
-              </span>
-            </p>
-          );
-        }
-        if (line.trim() === "") return <div key={i} className="h-1" />;
-        return <p key={i}>{line}</p>;
-      })}
-    </div>
-  );
 }
 
 // ─── Main Component ───

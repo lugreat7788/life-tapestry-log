@@ -8,43 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getInsights, type AiInsight } from "@/lib/supabase-store";
 import { cn } from "@/lib/utils";
 import { contentToMarkdown, insightToMarkdown, downloadMarkdown } from "@/lib/export";
-
-// ─── Shared insight renderer ───
-
-function InsightContent({ text }: { text: string }) {
-  return (
-    <div className="space-y-1.5 text-[12px] leading-relaxed text-foreground/85">
-      {text.split("\n").map((line, i) => {
-        if (line.startsWith("### "))
-          return (
-            <p key={i} className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mt-3 mb-1 first:mt-0">
-              {line.replace("### ", "")}
-            </p>
-          );
-        if (line.startsWith("▸ ")) {
-          const [head, ...rest] = line.replace("▸ ", "").split(" — ");
-          return (
-            <p key={i} className="flex gap-1.5">
-              <span className="text-primary shrink-0 mt-px">▸</span>
-              <span>
-                {head}
-                {rest.length > 0 && <span className="text-muted-foreground"> — {rest.join(" — ")}</span>}
-              </span>
-            </p>
-          );
-        }
-        if (line.startsWith("— ") || line.startsWith("- "))
-          return (
-            <p key={i} className="pl-2 border-l-2 border-primary/30 py-0.5">
-              {line.replace(/^[—-] /, "")}
-            </p>
-          );
-        if (line.trim() === "") return <div key={i} className="h-1" />;
-        return <p key={i}>{line}</p>;
-      })}
-    </div>
-  );
-}
+import InsightContent from "@/components/InsightContent";
 
 // ─── Period label helpers ───
 

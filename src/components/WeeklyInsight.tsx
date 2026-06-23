@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getEmotionRecords, getGoals, getSleepData, saveInsight } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import type { Module } from "@/lib/modules";
+import InsightContent from "@/components/InsightContent";
 
 interface WeeklyInsightProps {
   allLogs: Record<string, any>;
@@ -100,44 +101,6 @@ function buildWeeklyPrompt(
   ];
 
   return lines.join("\n");
-}
-
-function InsightContent({ text }: { text: string }) {
-  const lines = text.split("\n");
-  return (
-    <div className="space-y-1.5 text-[12px] leading-relaxed text-foreground/85">
-      {lines.map((line, i) => {
-        if (line.startsWith("### ")) {
-          return (
-            <p key={i} className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mt-3 mb-1 first:mt-0">
-              {line.replace("### ", "")}
-            </p>
-          );
-        }
-        if (line.startsWith("▸ ")) {
-          const parts = line.replace("▸ ", "").split(" — ");
-          return (
-            <p key={i} className="flex gap-1.5">
-              <span className="text-primary shrink-0 mt-px">▸</span>
-              <span>
-                {parts[0]}
-                {parts[1] && <span className="text-muted-foreground"> — {parts[1]}</span>}
-              </span>
-            </p>
-          );
-        }
-        if (line.startsWith("- ")) {
-          return (
-            <p key={i} className="pl-2 border-l-2 border-primary/30 py-0.5">
-              {line.replace("- ", "")}
-            </p>
-          );
-        }
-        if (line.trim() === "") return <div key={i} className="h-1" />;
-        return <p key={i}>{line}</p>;
-      })}
-    </div>
-  );
 }
 
 export default function WeeklyInsight({ allLogs, coreModules, bonusModules }: WeeklyInsightProps) {
