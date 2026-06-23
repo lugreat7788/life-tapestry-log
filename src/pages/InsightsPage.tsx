@@ -9,6 +9,7 @@ import { getInsights, type AiInsight } from "@/lib/supabase-store";
 import { cn } from "@/lib/utils";
 import { contentToMarkdown, insightToMarkdown, downloadMarkdown } from "@/lib/export";
 import InsightContent from "@/components/InsightContent";
+import LawHealthCheck from "@/components/LawHealthCheck";
 
 // ─── Period label helpers ───
 
@@ -228,6 +229,8 @@ export default function InsightsPage() {
           ))}
         </div>
       )}
+
+      <LawHealthCheck />
     </div>
   );
 }

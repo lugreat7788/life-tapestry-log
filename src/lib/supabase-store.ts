@@ -273,6 +273,17 @@ export async function getAllLogs(userId: string) {
   return result;
 }
 
+/** 最近一次有记录的日期（yyyy-MM-dd），无任何记录返回 null。用于死亡条款"感知死"对表。 */
+export async function getLastRecordDate(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("daily_logs")
+    .select("date")
+    .eq("user_id", userId)
+    .order("date", { ascending: false })
+    .limit(1);
+  return (data?.[0] as { date: string } | undefined)?.date ?? null;
+}
+
 // ─── All-Time Points ───
 
 export async function getAllTimePoints(userId: string): Promise<number> {
