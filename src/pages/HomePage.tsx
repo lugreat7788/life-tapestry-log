@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, Check } from "lucide-react";
 import HeroCard from "@/components/HeroCard";
 import ModuleCard from "@/components/ModuleCard";
 import { StreakRiskBanner, MilestoneBadge } from "@/components/CelebrationAnimation";
 import WeeklyReview from "@/components/WeeklyReview";
-import InsightReview from "@/components/InsightReview";
 import { useAuth } from "@/hooks/useAuth";
 import { useDataCache } from "@/hooks/useDataCache";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
 import { CORE_MODULES } from "@/lib/modules";
+import { cn } from "@/lib/utils";
 import type { DailyLog } from "@/lib/store-types";
 
 const MILESTONE_KEY = "lifelog_milestone_shown";
@@ -30,6 +32,7 @@ function markMilestoneShown(days: number) {
 }
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { coreModules, bonusModules } = useModuleConfig();
   const cache = useDataCache();
@@ -40,6 +43,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [showMilestone, setShowMilestone] = useState<number | null>(null);
   const [lowEnergyMode] = useState(() => localStorage.getItem("lifelog_low_energy") === "true");
+  const [bonusExpanded, setBonusExpanded] = useState(false);
 
   const loadLog = useCallback(async () => {
     if (!user) return;
@@ -162,10 +166,6 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="mt-3">
-        <InsightReview log={log} coreModules={coreModules} bonusModules={bonusModules} />
-      </div>
-
       <h2 className="text-[9px] font-medium text-muted-foreground/60 mt-3 mb-2 uppercase tracking-[0.15em]">
         {lowEnergyMode ? "🔋 低能量模式 · 只需完成这些" : "每日必修"}
       </h2>
@@ -174,6 +174,95 @@ export default function HomePage() {
           <ModuleCard key={mod.key} module={mod} log={log} index={i} />
         ))}
       </div>
+
+      {!lowEnergyMode && bonusModules.length > 0 && (
+        <div className="mt-3 rounded-2xl bg-card shadow-card overflow-hidden">
+          <button
+            onClick={() => setBonusExpanded((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3"
+          >
+            <span className="text-[13px] font-display font-medium text-foreground">加分</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-muted-foreground font-light tabular-nums">+{bonusPoints}</span>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 text-muted-foreground transition-transform duration-200",
+                  bonusExpanded && "rotate-180"
+                )}
+              />
+            </div>
+          </button>
+          <AnimatePresence initial={false}>
+            {bonusExpanded && (
+              <motion.div
+                key="bonus-content"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-2.5 px-4 pb-3">
+                  {bonusModules.map((mod, i) => {
+                    const earned = mod.items.reduce(
+                      (s, item) => s + (log.entries[item.id]?.completed ? item.points : 0),
+                      0
+                    );
+                    return (
+                      <motion.div
+                        key={mod.key}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04, duration: 0.3 }}
+                        className="rounded-2xl bg-background shadow-card p-3.5"
+                      >
+                        <button
+                          onClick={() => navigate(`/modules/${mod.key}`)}
+                          className="flex items-center gap-3 w-full text-left mb-2.5"
+                        >
+                          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-base", mod.bgClass)}>
+                            {mod.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-display font-medium text-[13px] text-foreground">{mod.name}</h3>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground font-light tabular-nums">+{earned}</span>
+                        </button>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {mod.items.map((item) => {
+                            const done = log.entries[item.id]?.completed;
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={() => navigate(`/modules/${mod.key}`)}
+                                className={cn(
+                                  "flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-left transition-all text-[11px]",
+                                  done
+                                    ? "bg-primary/8 text-primary"
+                                    : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors",
+                                  done ? "bg-primary border-primary" : "border-muted-foreground/25"
+                                )}>
+                                  {done && <Check className="w-2 h-2 text-primary-foreground" />}
+                                </div>
+                                <span className="truncate">{item.name}</span>
+                                <span className="ml-auto text-[9px] opacity-40 tabular-nums">+{item.points}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

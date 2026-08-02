@@ -268,7 +268,7 @@ export default function GoalsPage() {
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <h1 className="text-2xl font-display font-bold text-foreground mb-5">心灵记录</h1>
+      <h1 className="text-2xl font-display font-bold text-foreground mb-5">觉察记录</h1>
 
       <Tabs defaultValue="awareness" className="w-full">
         <TabsList className="w-full">

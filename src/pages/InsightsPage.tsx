@@ -5,11 +5,14 @@ import { Sparkles, BookOpen, ChevronDown, ChevronUp, Copy, Check, Download } fro
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { getInsights, type AiInsight } from "@/lib/supabase-store";
+import { useModuleConfig } from "@/hooks/useModuleConfig";
+import { getInsights, getDailyLog, type AiInsight } from "@/lib/supabase-store";
 import { cn } from "@/lib/utils";
 import { contentToMarkdown, insightToMarkdown, downloadMarkdown } from "@/lib/export";
 import InsightContent from "@/components/InsightContent";
+import InsightReview from "@/components/InsightReview";
 import LawHealthCheck from "@/components/LawHealthCheck";
+import type { DailyLog } from "@/lib/store-types";
 
 // ─── Period label helpers ───
 
@@ -157,9 +160,11 @@ function InsightCard({ insight }: { insight: AiInsight }) {
 
 export default function InsightsPage() {
   const { user } = useAuth();
+  const { coreModules, bonusModules } = useModuleConfig();
   const [tab, setTab] = useState<"daily" | "weekly">("daily");
   const [insights, setInsights] = useState<AiInsight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [log, setLog] = useState<DailyLog>({ date: "", entries: {}, totalPoints: 0 });
 
   useEffect(() => {
     if (!user) return;
@@ -170,11 +175,16 @@ export default function InsightsPage() {
       .finally(() => setLoading(false));
   }, [user, tab]);
 
+  useEffect(() => {
+    if (!user) return;
+    getDailyLog(user.id).then(setLog);
+  }, [user]);
+
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">芦苇日志</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground">洞察日志</h1>
           <p className="text-[11px] text-muted-foreground/60 mt-0.5">AI 生成的洞察与回顾，自动保存</p>
         </div>
         {insights.length > 0 && (
@@ -205,6 +215,12 @@ export default function InsightsPage() {
         ))}
       </div>
 
+      {tab === "daily" && (
+        <div className="mb-5">
+          <InsightReview log={log} coreModules={coreModules} bonusModules={bonusModules} />
+        </div>
+      )}
+
       {/* Content */}
       {loading ? (
         <div className="space-y-3">
@@ -219,7 +235,7 @@ export default function InsightsPage() {
             还没有{tab === "daily" ? "每日洞察" : "每周回顾"}
           </p>
           <p className="text-[11px] text-muted-foreground/60">
-            在首页{tab === "daily" ? "生成今日洞察" : "生成每周回顾"}后会自动保存到这里
+            {tab === "daily" ? "点击上方「生成洞察」" : "在首页生成每周回顾"}后会自动保存到这里
           </p>
         </div>
       ) : (

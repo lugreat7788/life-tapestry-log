@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { DataCacheProvider } from "@/hooks/useDataCache";
 import AppLayout from "@/components/AppLayout";
 import HomePage from "@/pages/HomePage";
-import ModulesPage from "@/pages/ModulesPage";
 import ModuleDetailPage from "@/pages/ModuleDetailPage";
 import GoalsPage from "@/pages/GoalsPage";
 import StatsPage from "@/pages/StatsPage";
@@ -39,7 +38,6 @@ function ProtectedRoutes() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/modules" element={<ModulesPage />} />
         <Route path="/modules/:moduleKey" element={<ModuleDetailPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/stats" element={<StatsPage />} />

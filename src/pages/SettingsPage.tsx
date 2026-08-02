@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { CORE_MODULES, BONUS_MODULES, GOALS_MODULE, DEFAULT_CORE_MODULES, DEFAULT_BONUS_MODULES, DEFAULT_GOALS_MODULE, getCoreMaxPoints, MODULES } from "@/lib/modules";
 import type { Module } from "@/lib/modules";
@@ -6,7 +7,7 @@ import { getModuleConfig, saveModuleConfig, clearModuleConfig, getAllLogs, getTo
 import type { ModuleConfig } from "@/lib/store-types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { User, Download, ChevronRight, ChevronDown, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart, FileText, FileSpreadsheet, Globe, Battery } from "lucide-react";
+import { User, Download, ChevronRight, ChevronDown, Plus, Trash2, RotateCcw, AlertTriangle, Pencil, LogOut, Brain, Heart, FileText, FileSpreadsheet, Globe, Battery, BarChart3 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ function applySingleConfig(mod: Module, config: ModuleConfig | null): Module {
 }
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [config, setConfig] = useState<ModuleConfig | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
@@ -560,6 +562,12 @@ tr:nth-child(even){background:#fafaf7}
             </div>
           </div>
         )}
+      </div>
+
+      <div className="bg-card rounded-xl shadow-card p-4 mb-6">
+        <button onClick={() => navigate("/stats")} className="flex items-center gap-3 w-full text-sm">
+          <BarChart3 className="w-5 h-5 text-primary" /><span>统计 · 数据与趋势</span><ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+        </button>
       </div>
 
       <div className="bg-card rounded-xl shadow-card p-4 mb-6">

@@ -1,13 +1,11 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, LayoutGrid, Heart, BarChart3, Settings, Sparkles } from "lucide-react";
+import { Home, Heart, Settings, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, label: "必修" },
-  { path: "/modules", icon: LayoutGrid, label: "加分" },
-  { path: "/goals", icon: Heart, label: "心灵" },
-  { path: "/insights", icon: Sparkles, label: "芦苇" },
-  { path: "/stats", icon: BarChart3, label: "统计" },
+  { path: "/goals", icon: Heart, label: "觉察" },
+  { path: "/insights", icon: Sparkles, label: "洞察" },
   { path: "/settings", icon: Settings, label: "设置" },
 ];
 

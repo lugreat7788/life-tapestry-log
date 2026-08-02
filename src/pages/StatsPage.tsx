@@ -8,7 +8,7 @@ import { getAllLogs, getWeekPoints, getStreakDays, getSleepData, getAllTimePoint
 import type { BodySignal, AiInsight } from "@/lib/supabase-store";
 import { useAuth } from "@/hooks/useAuth";
 import { useModuleConfig } from "@/hooks/useModuleConfig";
-import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2, Sparkles } from "lucide-react";
+import { Flame, TrendingUp, Target, ChevronLeft, ChevronRight, Moon, Clock, Check, X, Edit2, FileText, Search, Share2, Sparkles, ArrowLeft } from "lucide-react";
 import { buildDayMarkdown, downloadMarkdown, insightToMarkdown } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -319,6 +319,14 @@ export default function StatsPage() {
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        返回
+      </button>
+
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-2xl font-display font-bold text-foreground">统计</h1>
         <div className="flex items-center gap-1">
